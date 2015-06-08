@@ -2,8 +2,7 @@
 \docType{data}
 \alias{ch7lie}
 \title{LIE Data for the Vectorized Root System of a Young Oak Tree}
-\description{
-  This data set obtained with Data Analysis of Root Tracings summarizes the attributes of each point used to construct the links constituting the interpreted root system of a young oak tree (\emph{Quercus robur} L.) growing in a vertical rhizobox.    
+\description{This dataset obtained with Data Analysis of Root Tracings summarizes the attributes of each point used to construct the links constituting the interpreted root system of a young oak tree (\emph{Quercus robur} L.) growing in a vertical rhizobox.    
 }
 \usage{ch7lie}
 \format{A data frame containing the following columns:

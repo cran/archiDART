@@ -55,15 +55,22 @@ normal<-function(u){
 
 ################################################################################################
 
-trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", unitangle="d", rotation=0, l.brangle, l.varangle, l.tipangle){
+trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", rotation=0, l.brangle, l.curv, l.tipangle, rsml.date=NULL){
   
   # Errors interception
   
-  if (mode(inputrac)!="character"){stop("mode(inputrac) must be character")}
+  if (is.null(inputrac)==TRUE & is.null(inputlie)==TRUE & is.null(inputtps)==TRUE & is.null(inputrsml)==TRUE){stop("inputrac/inpulie/inputtps and/or inputrsml must be provided")}
   
-  if (mode(inputlie)!="character"){stop("mode(inputlie) must be character")}
+  if (is.null(inputrac)==FALSE) {if (mode(inputrac)!="character"){stop("mode(inputrac) must be character")}}
   
-  if (mode(inputtps)!="character"){stop("mode(inputtps) must be character")}
+  if (is.null(inputlie)==FALSE) {if (mode(inputlie)!="character"){stop("mode(inputlie) must be character")}}
+  
+  if (is.null(inputtps)==FALSE) {if (mode(inputtps)!="character"){stop("mode(inputtps) must be character")}}
+  
+  if (is.null(inputrsml)==FALSE) {if (mode(inputrsml)!="character"){stop("mode(inputrsml) must be character")}}
+  
+  if (is.null(inputrac)==FALSE|is.null(inputtps)==FALSE|is.null(inputlie)==FALSE){
+    if (is.null(inputrac)==TRUE|is.null(inputtps)==TRUE|is.null(inputlie)==TRUE){stop("If inputrac/inputlie/inputtps is not NULL, inputrac/inputlie/inputtps must be provided")}}
   
   if (is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
   if (is.null(res)==FALSE){
@@ -82,40 +89,150 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
   if (mode(l.brangle)!="numeric"){stop("mode(l.brangle) must be numeric")}
   if (l.brangle<=0) {stop("l.brangle must be a positive value")}
   
-  if (mode(l.varangle)!="numeric"){stop("mode(l.varangle) must be numeric")}
-  if (l.varangle<=0) {stop("l.varangle must be a positive value")}
+  if (mode(l.curv)!="numeric"){stop("mode(l.curv) must be numeric")}
+  if (l.curv<=0) {stop("l.curv must be a positive value")}
   
   if (mode(l.tipangle)!="numeric"){stop("mode(l.tipangle) must be numeric")}
   if (l.tipangle<=0) {stop("l.tipangle must be a positive value")}
   
-  # Reading of DART output files
+  if (is.null(inputrsml)==FALSE & is.null(rsml.date)==TRUE) {stop("If inputrsml is not NULL, rsml.date must be a positive numeric value")}
   
-  filenames.lie<-list.files(path=inputlie, pattern="\\.lie$")
-  path.lie<-rep(inputlie, length.out=length(filenames.lie))
-  filenameslie<-sub(x=filenames.lie, pattern="\\.lie$", replacement="")
-  LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE)
-  print(paste("Number of DART lie files in inputlie:", length(LIE), sep=" "))
+  if (is.null(rsml.date)==FALSE){
+    if (rsml.date<=0|length(rsml.date)>1){stop("rsml.date must be a single positive value")}}
   
-  filenames.rac<-list.files(path=inputrac, pattern="\\.rac$")
-  path.rac<-rep(inputrac, length.out=length(filenames.rac))
-  filenamesrac<-sub(x=filenames.rac, pattern="\\.rac$", replacement="")
-  DATA<-lapply(paste(path.rac, "/", filenames.rac, sep=""), read.table, skip=1)
-  print(paste("Number of DART rac files in inputrac:", length(DATA), sep=" "))
-  for (i in 1:length(DATA)) {
-    colnames(DATA[[i]])<-c()
-    colnames(DATA[[i]])[1]<-"Root"
-    colnames(DATA[[i]])[2]<-"Mother"
-    colnames(DATA[[i]])[3]<-"Ord"
-    colnames(DATA[[i]])[4]<-"DBase"
-    colnames(DATA[[i]])[5]<-"DApp"
-    for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
+  # Reading of DART and rsml files
   
-  filenames.tps<-list.files(path=inputtps, pattern="\\.tps$")
-  path.tps<-rep(inputtps, length.out=length(filenames.tps))
-  filenamestps<-sub(x=filenames.tps, pattern="\\.tps$", replacement="")
-  TIME<-lapply(paste(path.tps, "/", filenames.tps, sep=""), read.table, header=TRUE)
-  print(paste("Number of DART tps files in inputtps:", length(TIME), sep=" "))
- 
+  if (is.null(inputrac)==FALSE){
+    filenames.rac<-list.files(path=inputrac, pattern="\\.rac$")
+    path.rac<-rep(inputrac, length.out=length(filenames.rac))
+    filenamesrac<-sub(x=filenames.rac, pattern="\\.rac$", replacement="")
+    message(paste("Number of DART rac files in inputrac:", length(filenames.rac), sep=" "))}
+  
+  if (is.null(inputtps)==FALSE){
+    filenames.tps<-list.files(path=inputtps, pattern="\\.tps$")
+    path.tps<-rep(inputtps, length.out=length(filenames.tps))
+    filenamestps<-sub(x=filenames.tps, pattern="\\.tps$", replacement="")
+    message(paste("Number of DART tps files in inputtps:", length(filenames.tps), sep=" "))}
+  
+  if (is.null(inputlie)==FALSE){
+    filenames.lie<-list.files(path=inputlie, pattern="\\.lie$")
+    path.lie<-rep(inputlie, length.out=length(filenames.lie))
+    filenameslie<-sub(x=filenames.lie, pattern="\\.lie$", replacement="")
+    message(paste("Number of DART lie files in inputlie:", length(filenames.lie), sep=" "))}
+  
+  if (is.null(inputrsml)==FALSE){
+    filenames.rsml<-list.files(path=inputrsml, pattern="\\.rsml$")
+    path.rsml<-rep(inputrsml, length.out=length(filenames.rsml))
+    filenamesrsml<-sub(x=filenames.rsml, pattern="\\.rsml$", replacement="")
+    message(paste("Number of rsml files in inputrsml:", length(filenames.rsml), sep=" "))}
+  
+  if (is.null(inputrsml)==TRUE){
+    if (length(filenames.rac)==0){stop("There is no rac file in inputrac")}
+    if (length(filenames.tps)==0){stop("There is no tps file in inputtps")}
+    if (length(filenames.lie)==0){stop("There is no lie file in inputlie")}}
+  else {
+    if (is.null(inputrac)==TRUE){if (length(filenames.rsml)==0){stop("There is no rsml file in inputrsml")}}
+    else{
+      if (length(filenames.rac)==0){stop("There is no rac file in inputrac")}
+      if (length(filenames.tps)==0){stop("There is no tps file in inputtps")}
+      if (length(filenames.lie)==0){stop("There is no lie file in inputlie")}
+      if (length(filenames.rsml)==0){stop("There is no rsml file in inputrsml")}}}
+  
+  if (is.null(inputrsml)==TRUE){ # Only DART files
+    
+    LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE)
+    
+    DATA<-lapply(paste(path.rac, "/", filenames.rac, sep=""), read.table, skip=1)
+    for (i in 1:length(DATA)) {
+      colnames(DATA[[i]])<-c()
+      colnames(DATA[[i]])[1]<-"Root"
+      colnames(DATA[[i]])[2]<-"Mother"
+      colnames(DATA[[i]])[3]<-"Ord"
+      colnames(DATA[[i]])[4]<-"DBase"
+      colnames(DATA[[i]])[5]<-"DApp"
+      for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
+    
+    TIME<-lapply(paste(path.tps, "/", filenames.tps, sep=""), read.table, header=TRUE)
+  
+    if (length(LIE)!=length(DATA)) {stop("The number of rac files in inputrac and lie files in inputlie must be equal")}
+    else {
+      for (i in 1:length(DATA)) {if(filenamesrac[i]!=filenameslie[i]) {stop("Input rac files and their corresponding lie files must have the same name")}}}  	
+    
+    if (length(TIME)==1) {
+      for (i in 1:length(DATA)) {if(length(TIME[[1]]$Date)!=(ncol(DATA[[i]])-5)){stop("The number of observation dates between corresponding rac et tps files must be equal")}}}
+    else {
+      if (length(TIME)!=length(DATA)) {stop("If there is more than one tps file in inputtps, the number of rac/lie files in inputrac/inputlie and tps files in inputtps must be equal")}
+      else {
+        for (i in 1:length(DATA)) {if (filenamesrac[i]!=filenamestps[i]) {stop("Input rac/lie files and their corresponding tps files must have the same name")}}
+        for (i in 1:length(DATA)) {if (length(TIME[[i]]$Date)!=(ncol(DATA[[i]])-5)) {stop("The number of observation dates between corresponding rac et tps files must be equal")}}}}} 
+  
+  else {
+    
+    if (is.null(inputrac)==TRUE){ # Only rsml files
+      
+      LIE<-list()
+      DATA<-list()
+      TIME<-list()
+      time<-list(data.frame(Num=1, Date=rsml.date, CoulR=0, CoulG=0, CoulB=0))
+      filenameslie<-c()
+      RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=TRUE)
+      for (i in 1:length(RSML)){
+        for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
+        DATA<-append(DATA, RSML[[i]]$rac)
+        LIE<-append(LIE, RSML[[i]]$lie)
+        length1<-length(RSML[[i]]$rac)
+        TIME[(length(TIME)+1):(length(TIME)+length1)]<-time[1]
+        if (length1>1){
+          num<-c(1:length1)
+          filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
+        if (length1==1){
+          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}
+    
+    else { # DART and rsml files
+      
+      LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE)
+      
+      DATA<-lapply(paste(path.rac, "/", filenames.rac, sep=""), read.table, skip=1)
+      for (i in 1:length(DATA)) {
+        colnames(DATA[[i]])<-c()
+        colnames(DATA[[i]])[1]<-"Root"
+        colnames(DATA[[i]])[2]<-"Mother"
+        colnames(DATA[[i]])[3]<-"Ord"
+        colnames(DATA[[i]])[4]<-"DBase"
+        colnames(DATA[[i]])[5]<-"DApp"
+        for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
+      
+      TIME<-lapply(paste(path.tps, "/", filenames.tps, sep=""), read.table, header=TRUE)
+      
+      if (length(LIE)!=length(DATA)) {stop("The number of rac files in inputrac and lie files in inputlie must be equal")}
+      else {
+        for (i in 1:length(DATA)) {if(filenamesrac[i]!=filenameslie[i]) {stop("Input rac files and their corresponding lie files must have the same name")}}}  	
+      
+      if (length(TIME)==1) {
+        for (i in 1:length(DATA)) {if(length(TIME[[1]]$Date)!=(ncol(DATA[[i]])-5)){stop("The number of observation dates between corresponding rac et tps files must be equal")}}
+        TIME[1:length(DATA)]<-TIME[1]}
+      else {
+        if (length(TIME)!=length(DATA)) {stop("If there is more than one tps file in inputtps, the number of rac/lie files in inputrac/inputlie and tps files in inputtps must be equal")}
+        else {
+          for (i in 1:length(DATA)) {if (filenamesrac[i]!=filenamestps[i]) {stop("Input rac/lie files and their corresponding tps files must have the same name")}}
+          for (i in 1:length(DATA)) {if (length(TIME[[i]]$Date)!=(ncol(DATA[[i]])-5)) {stop("The number of observation dates between corresponding rac et tps files must be equal")}}}}
+      
+      RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=TRUE)
+      
+      time<-list(data.frame(Num=1, Date=rsml.date, CoulR=0, CoulG=0, CoulB=0))
+      
+      for (i in 1:length(RSML)){
+        for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
+        DATA<-append(DATA, RSML[[i]]$rac)
+        LIE<-append(LIE, RSML[[i]]$lie) 
+        length1<-length(RSML[[i]]$rac)
+        TIME[(length(TIME)+1):(length(TIME)+length1)]<-time[1]
+        if (length1>1){
+          num<-c(1:length1)
+          filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
+        if (length1==1){
+          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}}
+  
   # Unit conversion and rotation
   
   if (unitangle=="r") {
@@ -138,18 +255,6 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
     LIE[[i]]$Y<-newcoord[2,]}
     
   # Creating vectors and matrices for root architecture parameters calculation
-
-    if (length(LIE)!=length(DATA)) {stop("The number of rac files in inputrac and lie files in inputlie must be equal")}
-    else {
-      for (i in 1:length(DATA)) {if(filenamesrac[i]!=filenameslie[i]) {stop("Input rac files and their corresponding lie files must have the same name")}}}		
-  
-    if (length(TIME)==1) {
-      for (i in 1:length(DATA)) {if(length(TIME[[1]]$Date)!=(ncol(DATA[[i]])-5)){stop("The number of observation dates between corresponding rac et tps files must be equal")}}}
-    else {
-      if (length(TIME)!=length(DATA)) {stop("If there is more than one tps file in inputtps, the number of rac/lie files in inputrac/inputlie and tps files in inputtps must be equal")}
-      else {
-        for (i in 1:length(DATA)) {if (filenamesrac[i]!=filenamestps[i]) {stop("Input rac/lie files and their corresponding tps files must have the same name")}}
-        for (i in 1:length(DATA)) {if (length(TIME[[i]]$Date)!=(ncol(DATA[[i]])-5)) {stop("The number of observation dates between corresponding rac et tps files must be equal")}}}}
   
     filenames<-c()
     finallength.lie<-list()
@@ -202,6 +307,7 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
     XYcurv<-list()
     XYangle<-list()
     orientation<-c()
+    tortuosity<-c()
     if (length(TIME)==1){
       num<-TIME[[1]]$Num
       date<-TIME[[1]]$Date}
@@ -221,9 +327,9 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
         
         # Points used for root curvature calculation
         
-        if (finallength.lie[[i]][k]<l.varangle){XYcurv[[k]]<-NA}
+        if (finallength.lie[[i]][k]<l.curv){XYcurv[[k]]<-NA}
         else {
-        XYcurv[[k]]<-matrix(ncol=2, nrow=floor(finallength.lie[[i]][k]/l.varangle)+1)
+        XYcurv[[k]]<-matrix(ncol=2, nrow=floor(finallength.lie[[i]][k]/l.curv)+1)
         if (j==1){
               XYcurv[[k]][l,1]<-LIE[[i]]$X[j]
               XYcurv[[k]][l,2]<-LIE[[i]]$Y[j]
@@ -239,95 +345,95 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
         D<-distance(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
         distcurv<-D
         
-        while (l<=floor(finallength.lie[[i]][k]/l.varangle)+1){
+        while (l<=floor(finallength.lie[[i]][k]/l.curv)+1){
           
           # First situation
-          if (distcurv==l.varangle){
-            XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-            XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
-            l<-l+1
-            if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
-            distcurv<-0
-            suiv<-LIE[[i]]$Suiv[suiv]}
-          
-          # Second situation
-          if (distcurv<l.varangle){
-            while (distcurv<l.varangle){
+          if (distcurv<l.curv){
+            while (distcurv<l.curv){
               suiv<-LIE[[i]]$Suiv[suiv]
               D<-distance(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
               distcurv<-distcurv+D}
             
-            if (distcurv==l.varangle){
+            if (distcurv==l.curv){
               XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
               XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
               l<-l+1
-              if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+              if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
               distcurv<-0}
             
-            if (distcurv>l.varangle){
-              xycoord<-XYcoord(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.varangle-distcurv+D)
+            if (distcurv>l.curv){
+              xycoord<-XYcoord(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv-distcurv+D)
               XYcurv[[k]][l,1]<-xycoord[1]
               XYcurv[[k]][l,2]<-xycoord[2]
               l<-l+1
-              if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+              if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
               distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
               
-              if (distcurv==l.varangle){
+              if (distcurv==l.curv){
                 XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
                 XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
                 l<-l+1
-                if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+                if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                 distcurv<-0}
               
-              while (distcurv>l.varangle){
-                xycoord<-XYcoord(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.varangle)
+              while (distcurv>l.curv){
+                xycoord<-XYcoord(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv)
                 XYcurv[[k]][l,1]<-xycoord[1]
                 XYcurv[[k]][l,2]<-xycoord[2]
                 l<-l+1
-                if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+                if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                 distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
-                if (distcurv==l.varangle){
+                if (distcurv==l.curv){
                   XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
                   XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
                   l<-l+1
-                  if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+                  if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                   distcurv<-0}}
-              if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}}
+              if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}}
             suiv<-LIE[[i]]$Suiv[suiv]}
           
-          # Third situation
-          if (distcurv>l.varangle){
-            xycoord<-XYcoord(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.varangle-distcurv+D)
+          # Second situation
+          if (distcurv>l.curv){
+            xycoord<-XYcoord(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv-distcurv+D)
             XYcurv[[k]][l,1]<-xycoord[1]
             XYcurv[[k]][l,2]<-xycoord[2]
             l<-l+1
-            if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+            if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
             distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
             
-            if (distcurv==l.varangle){
+            if (distcurv==l.curv){
               XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
               XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
               l<-l+1
-              if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+              if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
               distcurv<-0}
             
-            while (distcurv>l.varangle){
-              xycoord<-XYcoord(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.varangle)
+            while (distcurv>l.curv){
+              xycoord<-XYcoord(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv)
               XYcurv[[k]][l,1]<-xycoord[1]
               XYcurv[[k]][l,2]<-xycoord[2]
               l<-l+1
-              if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+              if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
               distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
-              if (distcurv==l.varangle){
+              if (distcurv==l.curv){
                 XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
                 XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
                 l<-l+1
-                if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+                if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                 distcurv<-0}}
             
-            if (l>floor(finallength.lie[[i]][k]/l.varangle)+1) {break}
+            if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
             
           suiv<-LIE[[i]]$Suiv[suiv]}
+          
+          # Third situation
+          if (distcurv==l.curv){
+            XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+            XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+            l<-l+1
+            if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
+            distcurv<-0
+            suiv<-LIE[[i]]$Suiv[suiv]}
         
           D<-distance(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
           distcurv<-distcurv+D}}
@@ -414,7 +520,7 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
             if (n%*%lateral>0){orientation[k]<-"Left"}
             if (n%*%lateral<0){orientation[k]<-"Right"}}}
       
-      # Calculated the points used for the calculation of tip angles
+      # Calculating the points used for the calculation of tip angles
       
       if (finallength.lie[[i]][k]>=l.tipangle){
        
@@ -442,15 +548,12 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
               if (disttip==l.tipangle){xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2])}
               if (disttip>l.tipangle) {xycoord<-XYcoord(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], d=l.tipangle-disttip+D)}}
             
-            dy<-LIE[[i]]$Y[m]-xycoord[2]
-            
-            if (dy>=0) {tipangle[k,a:(b-1)]<-acos((c(1,0)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}
-            if (dy<0) {tipangle[k,a:(b-1)]<--acos((c(1,0)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}}}
+            tipangle[k,a:(b-1)]<-acos((c(0,1)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}}
           
           m<-LIE[[i]]$Suiv[m]}
       
       if (LIE[[i]]$Apic[m]=="true"){
-        
+                
           a<-LIE[[i]]$Date[m]
         
           disttip<-distance(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]])
@@ -466,15 +569,20 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
             if (disttip==l.tipangle){xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2])}
             if (disttip>l.tipangle) {xycoord<-XYcoord(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], d=l.tipangle-disttip+D)}}
           
-          dy<-LIE[[i]]$Y[m]-xycoord[2]
-          
-          if (dy>=0) {tipangle[k,(a:ncol(tipangle))]<-acos((c(1,0)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}
-          if (dy<0) {tipangle[k,(a:ncol(tipangle))]<--acos((c(1,0)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}}}}}
+          tipangle[k,(a:ncol(tipangle))]<-acos((c(0,1)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}}
+      
+      # Tortuosity
+      
+      m<-j
+      
+      while (LIE[[i]]$Apic[m]!="true"){m<-LIE[[i]]$Suiv[m]}
+      
+      if (k==1) {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2)} else {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[LIE[[i]]$Prec[j]]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[LIE[[i]]$Prec[j]]-LIE[[i]]$Y[m])^2)}}}
     
     tip[[i]]<-data.frame(DATA[[i]]$Root, tipangle)
     colnames(tip[[i]])<-c("Root", paste("Ang.Date", t(num), sep=""))
   
-  # Calculating branching angles and angle variations along each single root
+  # Calculating branching angles and curvatures
   
     br.angle<-c()
     meananglevar<-c()
@@ -488,8 +596,7 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
         VECTangle[1,]<-XYangle[[j]][2,]-XYangle[[j]][1,] # For mother roots
         VECTangle[2,]<-XYangle[[j]][3,]-XYangle[[j]][1,] # For daugther roots
         normVECTangle<-sqrt(VECTangle[,1]^2+VECTangle[,2]^2)
-        U.V<-VECTangle[1,]%*%VECTangle[2,]
-        br.angle[j]<-acos(U.V/(normVECTangle[1]*normVECTangle[2]))*cunitangle} 
+        br.angle[j]<-acos((VECTangle[1,]%*%VECTangle[2,])/(normVECTangle[1]*normVECTangle[2]))*cunitangle} 
       
       else {br.angle[j]<-NA}
       
@@ -497,18 +604,15 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
         
         if (nrow(XYcurv[[j]])>2){
           
-          if (is.na(orientation[j])==TRUE){horiz <- c(1, 0)} 
-          else {
-          if (orientation[j]=="Left"){horiz <- c(1, 0)}
-          if (orientation[j] == "Right") {horiz <- c(-1, 0)}}
-        
           VECTcurv<-diff(XYcurv[[j]])
-          normVECTcurv<-sqrt(VECTcurv[,1]^2+VECTcurv[,2]^2)
-          U.V<-horiz%*%t(VECTcurv)
-          angle<-acos(U.V/normVECTcurv)*cunitangle
-          var.angle<-diff(t(angle))
-          meananglevar[j]<-mean(var.angle)
-          sdanglevar[j]<-sd(var.angle)}
+          angle<-c()
+          for (k in 1:(nrow(XYcurv[[j]])-2)){
+            ratio<-(VECTcurv[k,]%*%VECTcurv[k+1,])/(sqrt(VECTcurv[k,1]^2+VECTcurv[k,2]^2)*sqrt(VECTcurv[k+1,1]^2+VECTcurv[k+1,2]^2))
+            if (ratio>1) {ratio<-1} # The value of a cosinus must be < or equal to 1
+            if (ratio<(1*(-1))) {ratio<-1*(-1)} # The value of a cosinus must be > or equal to -1
+            angle[k]<-acos(ratio)*cunitangle}
+          meananglevar[j]<-mean(angle)
+          sdanglevar[j]<-sd(angle)}
       
         else {
           
@@ -520,7 +624,7 @@ trajectory<-function(inputrac, inputlie, inputtps, res=NULL, unitlength="px", un
         meananglevar[j]<-NA
         sdanglevar[j]<-NA}}
   
-  rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, DApp=DATA[[i]]$DApp, FinalRootLength=finallength.lie[[i]], Orientation=orientation, Branching.Angle=br.angle, Mean.AngleVar=meananglevar, SD.AngleVar=sdanglevar)}
+  rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, DApp=DATA[[i]]$DApp, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Orientation=orientation, Branching.Angle=br.angle, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}
   
   names(rac)<-filenameslie
   names(tip)<-filenameslie

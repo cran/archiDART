@@ -41,24 +41,24 @@ archigrow<-function(inputlie, inputtps, res=NULL, unitlength="px", unittime, uni
   path.tps<-rep(inputtps, length.out=length(filenames.tps))
   filenamestps<-sub(x=filenames.tps, pattern="\\.tps$", replacement="")
   TIME<-lapply(paste(path.tps, "/", filenames.tps, sep=""), read.table, header=TRUE)
-  print(paste("Number of DART tps files in inputtps:", length(TIME), sep=" "))
+  message(paste("Number of DART tps files in inputtps:", length(TIME), sep=" "))
   
   filenames.lie<-list.files(path=inputlie, pattern="\\.lie$")
   path.lie<-rep(inputlie, length.out=length(filenames.lie))
   filenameslie<-sub(x=filenames.lie, pattern="\\.lie$", replacement="")
   LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE)
-  print(paste("Number of DART lie files in inputlie:", length(LIE), sep=" "))
+  message(paste("Number of DART lie files in inputlie:", length(LIE), sep=" "))
   
   if (length(TIME)==1) {
     age<-list()
     for (i in 1:length(LIE)) {age[[i]]<-TIME[[1]]$Date}
-    for (i in 1:length(LIE)) {if(length(age[[i]])!=max(LIE[[i]]$Date)){print(paste("Note: The number of observation dates in", filenames.tps[[1]], "is not equal to max(Date) in", filenames.lie[[i]], sep=" "))}}}
+    for (i in 1:length(LIE)) {if(length(age[[i]])!=max(LIE[[i]]$Date)){message(paste("Note: The number of observation dates in", filenames.tps[[1]], "is not equal to max(Date) in", filenames.lie[[i]], sep=" "))}}}
   else {
     if (length(TIME)!=length(LIE)) {stop("If there is more than one tps file in inputtps, the number of lie files in inputlie and tps files in inputtps must be equal")}
       for (i in 1:length(LIE)) {if(filenameslie[i]!=filenamestps[i]) {stop("Input lie files and their corresponding tps files must have the same name")}}
       age<-list()
       for (i in 1:length(LIE)){age[[i]]<-TIME[[i]]$Date}
-      for (i in 1:length(LIE)) {if (length(age[[i]])!=max(LIE[[i]]$Date)) {print(paste("Note: The number of observation dates in", filenames.tps[[i]], "is not equal to max(Date) in", filenames.lie[[i]], sep=" "))}}}
+      for (i in 1:length(LIE)) {if (length(age[[i]])!=max(LIE[[i]]$Date)) {message(paste("Note: The number of observation dates in", filenames.tps[[i]], "is not equal to max(Date) in", filenames.lie[[i]], sep=" "))}}}
   
   # Unit conversion and rotation
   
@@ -212,7 +212,7 @@ archigrow<-function(inputlie, inputtps, res=NULL, unitlength="px", unittime, uni
       layout(1)}
     
     if (is.null(numdate)==FALSE) {
-      for (l in 1:length(numdate)){if (numdate[l]>max(LIE[[i]]$Date)){print(paste("Warning: numdate contains a numerical value greater than max(Date) in", filenames.lie[[i]], sep=" "))}}
+      for (l in 1:length(numdate)){if (numdate[l]>max(LIE[[i]]$Date)){message(paste("Warning: numdate contains a numerical value greater than max(Date) in", filenames.lie[[i]], sep=" "))}}
       if (finalscale==TRUE){
         LIE[[i]]$X<-LIE[[i]]$X-min(LIE[[i]]$X)
         LIE[[i]]$Y<-LIE[[i]]$Y-min(LIE[[i]]$Y)
