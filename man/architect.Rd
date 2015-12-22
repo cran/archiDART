@@ -1,7 +1,7 @@
 \name{architect}
 \alias{architect}
 \title{Computing Traits Describing The Global Root System Architecture}
-\description{Calculation of common root system architecture (RSA) traits from Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML).      
+\description{Calculation of common root system architecture (RSA) traits from Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2015)}.      
 }
 \usage{
 architect(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px",
@@ -10,7 +10,7 @@ architect(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px
   \item{inputrac}{A character string specifying the path to the folder containing the rac files created by DART. This argument could be the same as \code{inputtps}/\code{inputrsml}.}
   \item{inputtps}{A character string specifying the path to the folder containing the tps files created by DART. This argument could be the same as \code{inputrac}/\code{inputrsml}.}
   \item{inputrsml}{A character string specifying the path to the folder containing the rsml files. This argument could be the same as \code{inputrac}/\code{inputtps}.}
-  \item{res}{A numeric value specifying the image resolution (dots per inch, dpi) of the pictures used for the vectorization of the root systems. This argument must be specified only if \code{unitlength="mm"} or \code{unitlength="cm"}.}
+  \item{res}{\bold{If images were acquired with a flatbed scanner}: a numeric value specifying the resolution of the images used to vectorize the root systems (resolution is expressed in dots/inch). \bold{If images were acquired with a digital camera}: the ratio between the length of a reference object located on the image expressed in pixels and the actual length of the same object expressed in inches. This argument must be specified only if \code{unitlength="mm"} or \code{unitlength="cm"}.}
   \item{unitlength}{A character string specifying the unit of length that must be used by the function to express the results in the final data frame. The value acceptable for this argument could be either \dQuote{px} for pixels, \dQuote{cm} for centimetres or \dQuote{mm} for millimetres.}
   \item{rsml.date}{A numeric value that must be specified when \code{is.null(inputrsml)=FALSE}. This argument specifies the root system age (the unit of time is defined by the user) and will be used only for RSA data encoded with the Root System Markup Language.}
   \item{rsml.connect}{A logical value that must be specified when \code{is.null(inputrsml)=FALSE}. This argument will be used only for RSA data encoded with the Root System Markup Language. If \code{TRUE}, the lateral roots will be connected to their parent root if no connection information can be found in the rsml file(s) (see details). If \code{FALSE}, no connection will be made between daughter and mother roots if no connection information can be found in the rsml file(s).}
@@ -41,9 +41,11 @@ The data frame contains the following columns: \bold{FileName} (the name of the 
 \bold{If \code{rootdiv} is a vector of numeric values}, the following columns will be added to the data frame: \bold{N2LR.XtoY} (the secondary root number in a layer delimited by X and Y on the first-order root), \bold{L2LR.XtoY} (the total secondary root length in a layer delimited by X and Y on the first-order root expressed in \code{unitlength}), \bold{D2LR.XtoY} (the secondary root density in a layer delimited by X and Y on the first-order root expressed in root(s)/\code{unitlength}).
 }
 \references{
-Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, \bold{326}, 261--273.
+Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2015) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
 
-Lobet G., Pound M.P., Diener J., Pradal C., Draye X., Godin C., Javaux M., Leitner D., Meunier F., Nacry P., Pridmore T.P., Schnepf A. (2015) Root System Markup Language: Toward a Unified Root Architecture Description Language, \emph{Plant Physiology}, \bold{167}, 617--627. 
+Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
+
+Lobet G., Pound M.P., Diener J., Pradal C., Draye X., Godin C., Javaux M., Leitner D., Meunier F., Nacry P., Pridmore T.P., Schnepf A. (2015) Root System Markup Language: Toward a Unified Root Architecture Description Language, \emph{Plant Physiology}, DOI: 10.1104/pp.114.253625. 
 }
 \author{Benjamin M. Delory, Caroline Baudson, Yves Brostaux, Guillaume Lobet, Loic Pages, Patrick du Jardin, Pierre Delaplace
 }

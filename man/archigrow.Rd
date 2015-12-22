@@ -1,7 +1,7 @@
 \name{archigrow}
 \alias{archigrow}
 \title{Computing Growth Rates and X-Y Plotting of Vectorized Root Systems}
-\description{Calculation of growth rate matrices and X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files. In the final plots, the colour code used for each link constituting the vectorized root systems depends on their corresponding growth rate value.  
+\description{Calculation of growth rate matrices and X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files. In the final plots, the colour code used for each link constituting the vectorized root systems depends on their corresponding growth rate value. More information can be found in \cite{Delory et al (2015)}.  
 }
 \usage{
 archigrow(inputlie, inputtps, res=NULL, unitlength="px", unittime, 
@@ -11,7 +11,7 @@ archigrow(inputlie, inputtps, res=NULL, unitlength="px", unittime,
 \arguments{
   \item{inputlie}{A character string specifying the path to the folder containing the lie files created by DART. This argument could be the same as \code{inputtps}.}
   \item{inputtps}{A character string specifying the path to the folder containing the tps files created by DART. This argument could be the same as \code{inputlie}.}
-  \item{res}{A numeric value specifying the image resolution (dots per inch, dpi) of the pictures used for the vectorization of the root systems. This argument must be specified only if \code{unitlength="mm"} or \code{unitlength="cm"}.}
+  \item{res}{\bold{If images were acquired with a flatbed scanner}: a numeric value specifying the resolution of the images used to vectorize the root systems (resolution is expressed in dots/inch). \bold{If images were acquired with a digital camera}: the ratio between the length of a reference object located on the image expressed in pixels and the actual length of the same object expressed in inches. This argument must be specified only if \code{unitlength="mm"} or \code{unitlength="cm"}.}
   \item{unitlength}{A character string specifying the unit of length that must be used by the function both to calculate the growth rate matrices and to scale the X and Y axes of the graphical outputs. The value acceptable for this argument could be either \dQuote{px} for pixels, \dQuote{cm} for centimetres or \dQuote{mm} for millimetres.}
   \item{unittime}{A character string specifying the unit of time used to express the data in the tps files created by DART (all character strings are valid for this argument).}
   \item{unitangle}{A character string specifying the unit that must be used by the function to express the calculated angles. The value acceptable for this argument could be either \dQuote{d} for degrees (default value) or \dQuote{r} for radians.}
@@ -47,7 +47,9 @@ Returns the computed growth rate matrices in a list of data frames. Each element
 Returns a X-Y plot for each vectorized root system located in \code{inputlie}.
 }
 \references{
-Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, \bold{326}, 261--273.
+Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2015) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
+
+Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
 }
 \author{Benjamin M. Delory, Caroline Baudson, Yves Brostaux, Loic Pages, Patrick du Jardin, Pierre Delaplace
 }

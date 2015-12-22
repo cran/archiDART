@@ -1,6 +1,6 @@
 export(architect, archidraw, archigrow, latdist, trajectory)
 importFrom(stats, runif, sd)
 importFrom(utils, read.table, write.table)
-importFrom(graphics, plot, segments, par, layout, rasterImage)
-importFrom(grDevices, palette, colorRamp, colorRampPalette, rgb, as.raster)
+importFrom(graphics, plot, segments, par, layout, rasterImage, text)
+importFrom(grDevices, palette, colorRamp, colorRampPalette, rgb, as.raster, cm)
 importFrom(XML, xmlToList, xmlParse)

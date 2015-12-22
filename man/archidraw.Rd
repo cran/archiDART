@@ -1,7 +1,7 @@
 \name{archidraw}
 \alias{archidraw}
 \title{X-Y Plotting of Vectorized Root Systems}
-\description{X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML).  
+\description{X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2015)}.  
 }
 \usage{
 archidraw(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", 
@@ -12,7 +12,7 @@ archidraw(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d
 \arguments{
   \item{inputlie}{A character string specifying the path to the folder containing the lie files created by DART. This argument could be the same as \code{inputrsml}.}
   \item{inputrsml}{A character string specifying the path to the folder containing the rsml files. This argument could be the same as \code{inputlie}.}
-  \item{res}{A numeric value specifying the image resolution (dots per inch, dpi) of the pictures used for the vectorization of the root systems. This argument must be specified only if \code{unitlength="mm"} or \code{unitlength="cm"}.}
+  \item{res}{\bold{If images were acquired with a flatbed scanner}: a numeric value specifying the resolution of the images used to vectorize the root systems (resolution is expressed in dots/inch). \bold{If images were acquired with a digital camera}: the ratio between the length of a reference object located on the image expressed in pixels and the actual length of the same object expressed in inches. This argument must be specified only if \code{unitlength="mm"} or \code{unitlength="cm"}.}
   \item{unitlength}{A character string specifying the unit of length that must be used by the function to scale the X and Y axes of the graphical outputs. The value acceptable for this argument could be either \dQuote{px} for pixels, \dQuote{cm} for centimetres or \dQuote{mm} for millimetres.}
   \item{unitangle}{A character string specifying the unit that must be used by the function to express the calculated angles. The value acceptable for this argument could be either \dQuote{d} for degrees (default value) or \dQuote{r} for radians.}
   \item{rotation}{A numeric value specifying the angle (expressed in \code{unitangle}) that must be used by the function to perform a clockwise rotation of the root system.}
@@ -43,9 +43,11 @@ Additional graphical parameters can also be used to personalize the graphical ou
 \value{Returns a X-Y plot for each vectorized root system located in \code{inputlie}/\code{inputrsml}.
 }
 \references{
-Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, \bold{326}, 261--273.
+Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2015) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
 
-Lobet G., Pound M.P., Diener J., Pradal C., Draye X., Godin C., Javaux M., Leitner D., Meunier F., Nacry P., Pridmore T.P., Schnepf A. (2015) Root System Markup Language: Toward a Unified Root Architecture Description Language, \emph{Plant Physiology}, \bold{167}, 617--627.
+Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
+
+Lobet G., Pound M.P., Diener J., Pradal C., Draye X., Godin C., Javaux M., Leitner D., Meunier F., Nacry P., Pridmore T.P., Schnepf A. (2015) Root System Markup Language: Toward a Unified Root Architecture Description Language, \emph{Plant Physiology}, DOI: 10.1104/pp.114.253625.
 }
 \author{Benjamin M. Delory, Caroline Baudson, Yves Brostaux, Guillaume Lobet, Loic Pages, Patrick du Jardin, Pierre Delaplace
 }

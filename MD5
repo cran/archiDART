@@ -1,5 +1,5 @@
-abd2a36431db8f066d3a3b10332881f2 *DESCRIPTION
-5fc8bdd3a05db2ea8cc78e23e4578526 *NAMESPACE
+22c54ba1f5c607854d12b899263a84fb *DESCRIPTION
+526899a023c3374f4f16662a7694858b *NAMESPACE
 f2a76bb03529450489dd1d70231d1007 *R/archidraw.R
 ae923134ed0ef4cee51237c3254a2360 *R/archigrow.R
 9ef2f75800cb393242ddc912c4a7434f *R/architect.R
@@ -9,11 +9,11 @@ ae923134ed0ef4cee51237c3254a2360 *R/archigrow.R
 a8ae82eb6a63026a35eb78121970199d *data/ch7lie.RData
 b8ee6a1c7aadf6528d91f874b9da8158 *data/ch7rac.RData
 e3b25767ca3fbe4ab8bb459977121ec9 *data/ch7tps.RData
-668b10c2173e3f9d00850c7ed6fcabb3 *man/archidraw.Rd
-002e1260d0006fe83817ec448d922aa5 *man/archigrow.Rd
-67d60a04fe6e490cb7f0cd52564fd8d0 *man/architect.Rd
-c0eb55f547420ea10666594357f1b4e2 *man/ch7lie.Rd
-b5b4cb1ed49246eb30750404bd758924 *man/ch7rac.Rd
-2a457493f650fd58305a1d911bb855ff *man/ch7tps.Rd
-f185e197b4cac2defb61db6b0419ef13 *man/latdist.Rd
-6dc03fe3788710801494b1afe626c930 *man/trajectory.Rd
+e39e8c405a6c3fa7d3585e147ca4fe7b *man/archidraw.Rd
+a24c8e23f5b56e9820045fdf7cacb64d *man/archigrow.Rd
+0267c799f059ea39f7726765a86d16b7 *man/architect.Rd
+f8eeaae19a0967014d92e0b730634d58 *man/ch7lie.Rd
+ee1b0c45332cff93ce197509572a7920 *man/ch7rac.Rd
+d84011254be33647b65e0c89858cb1e4 *man/ch7tps.Rd
+b984c4f104a810db9234710bb70530eb *man/latdist.Rd
+e782cd8eb132abb46d3429be2f098fb5 *man/trajectory.Rd
