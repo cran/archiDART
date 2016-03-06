@@ -1,7 +1,7 @@
 \name{archigrow}
 \alias{archigrow}
 \title{Computing Growth Rates and X-Y Plotting of Vectorized Root Systems}
-\description{Calculation of growth rate matrices and X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files. In the final plots, the colour code used for each link constituting the vectorized root systems depends on their corresponding growth rate value. More information can be found in \cite{Delory et al (2015)}.  
+\description{Calculation of growth rate matrices and X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files. In the final plots, the colour code used for each link constituting the vectorized root systems depends on their corresponding growth rate value. More information can be found in \cite{Delory et al (2016)}.  
 }
 \usage{
 archigrow(inputlie, inputtps, res=NULL, unitlength="px", unittime, 
@@ -47,7 +47,7 @@ Returns the computed growth rate matrices in a list of data frames. Each element
 Returns a X-Y plot for each vectorized root system located in \code{inputlie}.
 }
 \references{
-Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2015) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
+Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2016) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
 
 Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
 }

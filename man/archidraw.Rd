@@ -1,7 +1,7 @@
 \name{archidraw}
 \alias{archidraw}
 \title{X-Y Plotting of Vectorized Root Systems}
-\description{X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2015)}.  
+\description{X-Y plotting of vectorized root systems for selected observation dates using Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2016)}.  
 }
 \usage{
 archidraw(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", 
@@ -43,7 +43,7 @@ Additional graphical parameters can also be used to personalize the graphical ou
 \value{Returns a X-Y plot for each vectorized root system located in \code{inputlie}/\code{inputrsml}.
 }
 \references{
-Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2015) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
+Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2016) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
 
 Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
 

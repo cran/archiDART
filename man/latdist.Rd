@@ -1,7 +1,7 @@
 \name{latdist}
 \alias{latdist}
 \title{Computing Lateral Root Length and Density Distribution}
-\description{Calculation of local lateral root lengths and densities, as well as distances between neighbouring lateral roots according to the distance between the branching point and the parent root base (DBase) using Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2015)}.  
+\description{Calculation of local lateral root lengths and densities, as well as distances between neighbouring lateral roots according to the distance between the branching point and the parent root base (DBase) using Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2016)}.  
 }
 \usage{
 latdist(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL, unitlength="px",
@@ -37,7 +37,7 @@ Returns a list including:
 \bold{If \code{output="dtp"}}: \bold{DBase} (the distance between the branching point and the parent root base expressed in \code{unitlength}), \bold{DTP} (the distance to the previous lateral root expressed in \code{unitlength}).}
 }
 \references{
-Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2015) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
+Delory B.M., Baudson C., Brostaux Y., Lobet G., du Jardin P., Pages L., Delaplace P. (2016) archiDART: an R package for the automated computation of plant root architectural traits, \emph{Plant and Soil}, DOI: 10.1007/s11104-015-2673-4.
 
 Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
 
