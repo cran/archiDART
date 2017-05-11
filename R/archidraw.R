@@ -1,4 +1,4 @@
-archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", rotation=0, rsml.connect=FALSE, numdate=NULL, finalscale=NULL, coldate=par("col"), ltydate=par("lty"), lwddate=par("lwd"), main=NULL, xlab=NULL, ylab=NULL, xlim=NULL, ylim=NULL,...){
+archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", rsml.connect=FALSE, rsml.date=NULL, unitangle="d", rotation=0, numdate=NULL, finalscale=NULL, coldate=par("col"), main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, xlim=NULL, ylim=NULL, zlim=NULL,...){
     
     # Errors interception
     
@@ -8,7 +8,7 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
     
     if (is.null(inputrsml)==FALSE) {if (mode(inputrsml)!="character"){stop("mode(inputrsml) must be character")}}
     
-    if (is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
+    if (is.null(inputlie)==FALSE & is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
     if (is.null(res)==FALSE){
       if (mode(res)!="numeric"){stop("mode(res) must be numeric")}
       if (res<=0){stop("res must be a positive value")}}
@@ -31,7 +31,13 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
      for (i in 1:length(numdate)) {if (numdate[i]!=numdate.sort[i]){stop("Numeric elements in numdate must be sorted by increasing values")}}}
     
     if (is.null(finalscale)==FALSE) {if (mode(finalscale)!="logical"){stop("mode(finalscale) must be logical")}}
-    
+  
+    if (is.null(numdate)==FALSE & is.null(finalscale)==TRUE) {stop("If numdate is not NULL, finascale must be specified")}
+  
+    if (is.null(rsml.date)==FALSE){
+      if (is.character(rsml.date)==TRUE|is.numeric(rsml.date)==TRUE){} else {stop("If rsml.date is not NULL, rsml.date must be a character string or a positive numeric value")}
+      if (is.numeric(rsml.date)==TRUE){if (rsml.date<=0|length(rsml.date)>1){stop("If mode(rsml.date) is numeric, rsml.date must be a single positive value")}}}
+  
     # Reading of DART and rsml files
     
     if (is.null(inputlie)==FALSE){
@@ -63,9 +69,11 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
       if (is.null(inputlie)==TRUE){ # Only rsml files
         
         LIE<-list()
+        res1<-c()
         filenameslie<-c()
-        RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=1, connect=rsml.connect)
+        RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=rsml.connect)
         for (i in 1:length(RSML)){
+          res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution), length(RSML[[i]]$lie)))
           LIE<-append(LIE, RSML[[i]]$lie)
           length1<-length(RSML[[i]]$lie)
           if (length1>1){
@@ -76,9 +84,11 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
       
       else { # DART and rsml files
         
+        res1<-rep(res, length(filenames.lie))
         LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE)
-        RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=1, connect=rsml.connect)
+        RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=rsml.connect)
         for (i in 1:length(RSML)){
+          res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution), length(RSML[[i]]$lie)))
           LIE<-append(LIE, RSML[[i]]$lie)
           length1<-length(RSML[[i]]$lie)
           if (length1>1){
@@ -87,7 +97,7 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
           if (length1==1){
             filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}}
     
-    # Unit conversion and rotation
+    # Unit conversion and rotation for 2D root systems
     
     if (unitangle=="r") {
       cunitangle<-1
@@ -98,78 +108,141 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
     
     rot.matrix<-matrix(c(cos(rotation), sin(rotation), -sin(rotation), cos(rotation)), nrow=2, ncol=2)
     
-    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-    if (unitlength=="cm") {cunit<-(cm(1)/res)}
-    if (unitlength=="px") {cunit<-1}
     for (i in 1:length(LIE)){
+      
+      if (is.null(inputrsml)==FALSE){res<-res1[i]}
+      
+      if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+      if (unitlength=="cm") {cunit<-(cm(1)/res)}
+      if (unitlength=="px") {cunit<-1}
+      
+      if (!("Z" %in% colnames(LIE[[i]]))){
       LIE[[i]]$X<-LIE[[i]]$X*cunit
       LIE[[i]]$Y<-LIE[[i]]$Y*cunit
       newcoord<-rot.matrix%*%t(as.matrix(data.frame(LIE[[i]]$X, LIE[[i]]$Y)))
       LIE[[i]]$X<-newcoord[1,]
       LIE[[i]]$Y<-newcoord[2,]}
+      else {
+        LIE[[i]]$X<-LIE[[i]]$X*cunit
+        LIE[[i]]$Y<-LIE[[i]]$Y*cunit
+        LIE[[i]]$Z<-LIE[[i]]$Z*cunit}}
     
-    # Drawing the root system architecture for each DART output file
+    # Drawing the root system architecture for each DART/RSML file
   
     for (i in 1:length(LIE)){
-  
+      
+      a<-max(LIE[[i]]$Date)
+      message(paste("Number of observation dates for ", filenameslie[i], ": ", a, sep=""))
+      
     if (is.null(numdate)==TRUE){
-      if (length(coldate)>max(LIE[[i]]$Date)){message(paste("Note: The number of colours in coldate is greater than max(Date) in ", filenameslie[i], ".lie", sep=""))}
-      if (length(coldate)<max(LIE[[i]]$Date)){message(paste("Note: The number of colours in coldate is lower than max(Date) in ", filenameslie[i], ".lie", sep=""))}
+      if (length(coldate)>max(LIE[[i]]$Date)){message(paste("Note: The number of colors in coldate is greater than the number of observation dates in ", filenameslie[i], sep=""))}
+      if (length(coldate)<max(LIE[[i]]$Date)){message(paste("Note: The number of colors in coldate is lower than the number of observation dates in ", filenameslie[i], sep=""))}
       coldate1<-rep(coldate, length.out=max(LIE[[i]]$Date))
-      if (length(ltydate)>max(LIE[[i]]$Date)){message(paste("Note: The number of elements in ltydate is greater than max(Date) in ", filenameslie[i], ".lie", sep=""))}
-      if (length(ltydate)<max(LIE[[i]]$Date)){message(paste("Note: The number of elements in ltydate is lower than max(Date) in ", filenameslie[i], ".lie", sep=""))}
-      ltydate1<-rep(ltydate, length.out=max(LIE[[i]]$Date))
-      if (length(lwddate)>max(LIE[[i]]$Date)){message(paste("Note: The number of elements in lwddate is greater than max(Date) in ", filenameslie[i], ".lie", sep=""))}
-      if (length(lwddate)<max(LIE[[i]]$Date)){message(paste("Note: The number of elements in lwddate is lower than max(Date) in ", filenameslie[i], ".lie", sep=""))}
-      lwddate1<-rep(lwddate, length.out=max(LIE[[i]]$Date))
       LIE[[i]]$X<-LIE[[i]]$X-min(LIE[[i]]$X)
       LIE[[i]]$Y<-LIE[[i]]$Y-min(LIE[[i]]$Y)
+      if ("Z" %in% colnames(LIE[[i]])) {LIE[[i]]$Z<-LIE[[i]]$Z-min(LIE[[i]]$Z)}
       minx<-min(LIE[[i]]$X)
       maxx<-max(LIE[[i]]$X)
       miny<-min(LIE[[i]]$Y)
       maxy<-max(LIE[[i]]$Y)
+      if ("Z" %in% colnames(LIE[[i]])){
+        minz<-min(LIE[[i]]$Z)
+        maxz<-max(LIE[[i]]$Z)}
       if (is.null(main)==TRUE){main1<-filenameslie[i]} else {main1<-main}
       if (is.null(xlim)==TRUE){xlim1<-c(minx,maxx)} else {xlim1<-xlim}
       if (is.null(ylim)==TRUE){ylim1<-c(maxy,miny)} else {ylim1<-ylim}
+      if ("Z" %in% colnames(LIE[[i]]) & is.null(zlim)==TRUE){zlim1<-c(minz,maxz)} else {zlim1<-zlim}
       if (is.null(xlab)==TRUE){xlab1<-paste("X (", unitlength, ")", sep="")} else {xlab1<-xlab}
       if (is.null(ylab)==TRUE){ylab1<-paste("Y (", unitlength, ")", sep="")} else {ylab1<-ylab}
-      plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
-      for (k in 1:nrow(LIE[[i]])){
-        a<-LIE[[i]]$Prec[k]
-        b<-LIE[[i]]$Date[k]
-        if (a!=0){segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=coldate1[b], lty=ltydate1[b], lwd=lwddate1[b],...)}}}
+      if ("Z" %in% colnames(LIE[[i]]) & is.null(zlab)==TRUE){zlab1<-paste("Z (", unitlength, ")", sep="")} else {zlab1<-zlab}
+      if ("Z" %in% colnames(LIE[[i]])){
+        root<-sum(LIE[[i]]$Suiv==0)
+        end<-which(LIE[[i]]$Suiv==0)
+        open3d()
+        plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
+        for (k in 1:root){
+          if (k==1) {
+            dataroot<-as.matrix(LIE[[i]][k:end[k],7:9])
+            col1<-LIE[[i]]$Date[2:end[k]]} 
+          else {
+            if (LIE[[i]]$Prec[end[k-1]+1]!=0){
+              dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])
+              dataroot<-rbind(LIE[[i]][LIE[[i]]$Num==LIE[[i]]$Prec[end[k-1]+1],7:9], dataroot)
+              col1<-LIE[[i]]$Date[(end[k-1]+1):end[k]]}
+            else{
+              dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])
+              col1<-LIE[[i]]$Date[(end[k-1]+2):end[k]]}}
+          for (l in 1:length(coldate1)){col1<-replace(col1, col1==l, coldate1[l])}
+          col1<-c("black", col1)
+          lines3d(dataroot, col=col1, smooth=FALSE, ...)}}
+      
+      else {
+            plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+            for (k in 1:nrow(LIE[[i]])){
+              a<-LIE[[i]]$Prec[k]
+              b<-LIE[[i]]$Date[k]
+              if (a!=0){segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=coldate1[b],...)}}}}
     
     if (is.null(numdate)==FALSE) {
-      for (l in 1:length(numdate)){if (numdate[l]>max(LIE[[i]]$Date)){message(paste("Note: numdate contains a numerical value greater than max(Date) in ", filenameslie[i], ".lie", sep=""))}}
-      if (length(coldate)>max(numdate)){message("Note: The number of colours in coldate is greater than max(numdate)")}
-      if (length(coldate)<max(numdate)){message("Note: The number of colours in coldate is lower than max(numdate)")}
+      for (l in 1:length(numdate)){if (numdate[l]>max(LIE[[i]]$Date)){message(paste("Note: numdate contains a numerical value greater than the number of observation dates in ", filenameslie[i], ". The root system at the last observation date will be plotted.", sep=""))}}
+      if (length(coldate)>max(numdate)){message("Note: The number of colors in coldate is greater than max(numdate)")}
+      if (length(coldate)<max(numdate)){message("Note: The number of colors in coldate is lower than max(numdate)")}
       coldate1<-rep(coldate, length.out=max(numdate))
-      if (length(ltydate)>max(numdate)){message("Note: The number of elements in ltydate is greater than max(numdate)")}
-      if (length(ltydate)<max(numdate)){message("Note: The number of elements in ltydate is lower than max(numdate)")}
-      ltydate1<-rep(ltydate, length.out=max(numdate))
-      if (length(lwddate)>max(numdate)){message("Note: The number of elements in lwddate is greater than max(numdate)")}
-      if (length(lwddate)<max(numdate)){message("Note: The number of elements in lwddate is lower than max(numdate)")}
-      lwddate1<-rep(lwddate, length.out=max(numdate))
       
       if (finalscale==TRUE){
         LIE[[i]]$X<-LIE[[i]]$X-min(LIE[[i]]$X)
         LIE[[i]]$Y<-LIE[[i]]$Y-min(LIE[[i]]$Y)
+        if ("Z" %in% colnames(LIE[[i]])) {LIE[[i]]$Z<-LIE[[i]]$Z-min(LIE[[i]]$Z)}
         minx<-min(LIE[[i]]$X)
         maxx<-max(LIE[[i]]$X)
         miny<-min(LIE[[i]]$Y)
         maxy<-max(LIE[[i]]$Y)
+        if ("Z" %in% colnames(LIE[[i]])){
+          minz<-min(LIE[[i]]$Z)
+          maxz<-max(LIE[[i]]$Z)}
         for (j in 1:length(numdate)){
+          
           if (is.null(main)==TRUE){main1<-paste(filenameslie[i], "-numdate=", numdate[j], sep="")} else {main1<-main}
           if (is.null(xlim)==TRUE){xlim1<-c(minx,maxx)} else {xlim1<-xlim}
           if (is.null(ylim)==TRUE){ylim1<-c(maxy,miny)} else {ylim1<-ylim}
+          if ("Z" %in% colnames(LIE[[i]]) & is.null(zlim)==TRUE){zlim1<-c(minz,maxz)} else {zlim1<-zlim}
           if (is.null(xlab)==TRUE){xlab1<-paste("X (", unitlength, ")", sep="")} else {xlab1<-xlab}
           if (is.null(ylab)==TRUE){ylab1<-paste("Y (", unitlength, ")", sep="")} else {ylab1<-ylab}
-          plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, xlab=xlab1, ylab=ylab1,...)
-          for (k in 1:nrow(LIE[[i]])){
-            if (LIE[[i]]$Date[k]<=numdate[j]){
-              a<-LIE[[i]]$Prec[k]
-              b<-LIE[[i]]$Date[k]
-              if (a!=0){segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k],col=coldate1[b],lty=ltydate1[b],lwd=lwddate1[b],...)}}}}}
+          if ("Z" %in% colnames(LIE[[i]]) & is.null(zlab)==TRUE){zlab1<-paste("Z (", unitlength, ")", sep="")} else {zlab1<-zlab}
+          if ("Z" %in% colnames(LIE[[i]])){
+            dataroot1<-LIE[[i]][LIE[[i]]$Date<=numdate[j],]
+            root<-sum(dataroot1$Bran=="true")
+            if (root>1) {
+              end<-which(dataroot1$Bran=="true")-1
+              end<-end[-1]
+              end[length(end)+1]<-nrow(dataroot1)}
+            else {end<-nrow(dataroot1)}
+            open3d()
+            plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
+            for (k in 1:root){
+                if (k==1) {
+                  dataroot<-as.matrix(dataroot1[k:end[k],7:9])
+                  col1<-dataroot1$Date[2:end[k]]} 
+                else {
+                  if (dataroot1$Prec[end[k-1]+1]!=0){
+                    dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
+                    dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],7:9], dataroot)
+                    col1<-dataroot1$Date[(end[k-1]+1):end[k]]}
+                  else{
+                    dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
+                    col1<-dataroot1$Date[(end[k-1]+2):end[k]]}}
+                
+              for (l in 1:length(coldate1)){col1<-replace(col1, col1==l, coldate1[l])}
+              col1<-c("black", col1)
+              lines3d(dataroot, col=col1, smooth=FALSE, ...)}} 
+              
+              else {
+                plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+                for (k in 1:nrow(LIE[[i]])){
+                  if (LIE[[i]]$Date[k]<=numdate[j]){
+                  a<-LIE[[i]]$Prec[k]
+                  b<-LIE[[i]]$Date[k]
+                  if (a!=0){segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=coldate1[b],...)}}}}}}
       
       if (finalscale==FALSE){
         for (j in 1:length(numdate)){
@@ -179,23 +252,60 @@ archidraw<-function(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", un
           Prec=NULL
           X=NULL
           Y=NULL
-          subset.LIE<-subset(LIE[[i]], Date<=numdate[j], select=c(Num, Date, Suiv, Prec, X, Y))
+          Z=NULL
+          if ("Z" %in% colnames(LIE[[i]])) {subset.LIE<-subset(LIE[[i]], Date<=numdate[j], select=c(Num, Date, Suiv, Prec, X, Y, Z))} else {subset.LIE<-subset(LIE[[i]], Date<=numdate[j], select=c(Num, Date, Suiv, Prec, X, Y))}
           LIE[[i]]$X<-LIE[[i]]$X-min(subset.LIE$X)
           LIE[[i]]$Y<-LIE[[i]]$Y-min(subset.LIE$Y)
+          if ("Z" %in% colnames(LIE[[i]])) {LIE[[i]]$Z<-LIE[[i]]$Z-min(subset.LIE$Z)}
           subset.LIE$X<-subset.LIE$X-min(subset.LIE$X)
           subset.LIE$Y<-subset.LIE$Y-min(subset.LIE$Y)
+          if ("Z" %in% colnames(LIE[[i]])) {subset.LIE$Z<-subset.LIE$Z-min(subset.LIE$Z)}
           minx<-min(subset.LIE$X)
           maxx<-max(subset.LIE$X)
           miny<-min(subset.LIE$Y)
           maxy<-max(subset.LIE$Y)
+          if ("Z" %in% colnames(LIE[[i]])){
+            minz<-min(subset.LIE$Z)
+            maxz<-max(subset.LIE$Z)}
           if (is.null(main)==TRUE){main1<-paste(filenameslie[i], "-numdate=", numdate[j], sep="")} else {main1<-main}
           if (is.null(xlim)==TRUE){xlim1<-c(minx,maxx)} else {xlim1<-xlim}
           if (is.null(ylim)==TRUE){ylim1<-c(maxy,miny)} else {ylim1<-ylim}
+          if ("Z" %in% colnames(LIE[[i]]) & is.null(zlim)==TRUE){zlim1<-c(minz,maxz)} else {zlim1<-zlim}
           if (is.null(xlab)==TRUE){xlab1<-paste("X (", unitlength, ")", sep="")} else {xlab1<-xlab}
           if (is.null(ylab)==TRUE){ylab1<-paste("Y (", unitlength, ")", sep="")} else {ylab1<-ylab}
-          plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, xlab=xlab1, ylab=ylab1,...)
-          for (k in 1:nrow(LIE[[i]])){
-            if (LIE[[i]]$Date[k]<=numdate[j]){
-              a<-LIE[[i]]$Prec[k]
-              b<-LIE[[i]]$Date[k]
-              if (a!=0){segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k],col=coldate1[b],lty=ltydate1[b],lwd=lwddate1[b],...)}}}}}}}}
+          if ("Z" %in% colnames(LIE[[i]]) & is.null(zlab)==TRUE){zlab1<-paste("Z (", unitlength, ")", sep="")} else {zlab1<-zlab}
+          
+          if ("Z" %in% colnames(LIE[[i]])){
+            dataroot1<-LIE[[i]][LIE[[i]]$Date<=numdate[j],]
+            root<-sum(dataroot1$Bran=="true")
+            if (root>1) {
+              end<-which(dataroot1$Bran=="true")-1
+              end<-end[-1]
+              end[length(end)+1]<-nrow(dataroot1)}
+            else {end<-nrow(dataroot1)}
+            open3d()
+            plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
+            for (k in 1:root){
+              if (k==1) {
+                dataroot<-as.matrix(dataroot1[k:end[k],7:9])
+                col1<-dataroot1$Date[2:end[k]]} 
+              else {
+                if (dataroot1$Prec[end[k-1]+1]!=0){
+                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
+                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],7:9], dataroot)
+                  col1<-dataroot1$Date[(end[k-1]+1):end[k]]}
+                else{
+                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
+                  col1<-dataroot1$Date[(end[k-1]+2):end[k]]}}
+              
+              for (l in 1:length(coldate1)){col1<-replace(col1, col1==l, coldate1[l])}
+              col1<-c("black", col1)
+              lines3d(dataroot, col=col1, smooth=FALSE, ...)}} 
+          
+          else {
+                  plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+                  for (k in 1:nrow(LIE[[i]])){
+                    if (LIE[[i]]$Date[k]<=numdate[j]){
+                      a<-LIE[[i]]$Prec[k]
+                      b<-LIE[[i]]$Date[k]
+                      if (a!=0){segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=coldate1[b], ,...)}}}}}}}}}

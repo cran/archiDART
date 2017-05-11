@@ -1,4 +1,4 @@
-latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL, unitlength="px", int.length=NULL, interpol=NULL, rsml.date=NULL, rsml.connect=FALSE){
+latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL, unitlength="px", int.length=NULL, interpol=NULL, rsml.connect=TRUE){
   
   # Errors interception
   
@@ -10,7 +10,7 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
   
   if (output=="lrd"|output=="dtp"){} else {stop("The character string in output must be lrd or dtp")}
   
-  if (is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
+  if (is.null(inputrac)==FALSE & is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
   if (is.null(res)==FALSE){
     if (mode(res)!="numeric"){stop("mode(res) must be numeric")}
     if (res<=0){stop("res must be a positive value")}}
@@ -24,14 +24,12 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
   
   if (is.null(int.length)==FALSE) {
     if (mode(int.length)!="numeric"){stop("mode(int.length) must be numeric")}
-    if (int.length<=0){stop("int.length must be a positive value")}}
-  
-  if (is.null(inputrsml)==FALSE & is.null(rsml.date)==TRUE) {stop("If inputrsml is not NULL, rsml.date must be a positive numeric value")}
-  
-  if (is.null(rsml.date)==FALSE){
-    if (rsml.date<=0|length(rsml.date)>1){stop("rsml.date must be a single positive value")}}
+    if (int.length<=0){stop("int.length must be a positive value")}
+    if (length(int.length)>1){stop("int.length must be a single positive value")}}
   
   if (mode(rsml.connect)!="logical"){stop("mode(rsml.connect) must be logical")}
+  
+  if (output=="lrd" & is.null(int.length)==TRUE){stop("If output=lrd, int.length must be specified")}
   
   # Reading of DART and rsml files
   
@@ -73,9 +71,11 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
     if (is.null(inputrac)==TRUE){ # Only rsml files
       
       DATA<-list()
+      res1<-c()
       filenamesrac<-c()
-      RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=rsml.connect)
+      RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=NULL, connect=rsml.connect)
       for (i in 1:length(RSML)){
+        res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
         for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
         DATA<-append(DATA, RSML[[i]]$rac)
         length1<-length(RSML[[i]]$rac)
@@ -98,9 +98,12 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
         colnames(DATA[[i]])[5]<-"DApp"
         for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
       
-      RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=rsml.connect)
+      res1<-rep(res, length(filenames.rac))
+      
+      RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=NULL, connect=rsml.connect)
       
       for (i in 1:length(RSML)){
+        res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
         for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
         DATA<-append(DATA, RSML[[i]]$rac)
         length1<-length(RSML[[i]]$rac)
@@ -112,17 +115,18 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
  
   # Unit conversion
   
-  if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-  if (unitlength=="cm") {cunit<-(cm(1)/res)}
-  if (unitlength=="px") {cunit<-1}
   for (i in 1:length(DATA)){
+    if (is.null(inputrsml)==FALSE){res<-res1[i]}
+    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+    if (unitlength=="cm") {cunit<-(cm(1)/res)}
+    if (unitlength=="px") {cunit<-1}
     DATA[[i]]$DBase<-DATA[[i]]$DBase*cunit
     for (j in 6:ncol(DATA[[i]])) {DATA[[i]][,j]<-DATA[[i]][,j]*cunit}}
     
   # Calculating lateral root distributions
 
   rac<-list()
-  res<-list()
+  results<-list()
   
   if (output=="lrd"){
   
@@ -178,7 +182,7 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
               
               LRdensity[[j]]<-NULL}}
           
-          res[[i]]<-LRdensity}
+          results[[i]]<-LRdensity}
         
         else {
           
@@ -187,11 +191,11 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
           global.latrootdensity<-latrootnum/finalrootlength
           
           rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase, LatRootNum=latrootnum, FinalRootLength=finalrootlength, LatRootDensity=global.latrootdensity)
-          res[[i]]<-NULL}}
+          results[[i]]<-NULL}}
         
           names(rac)<-filenamesrac
-          names(res)<-filenamesrac
-          outputresults<-list(root=rac, res=res)}
+          names(results)<-filenamesrac
+          outputresults<-list(root=rac, results=results)}
   
     else {
       
@@ -247,7 +251,7 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
             
             LRdensity[[j]]<-NULL}}
         
-        res[[i]]<-LRdensity}
+        results[[i]]<-LRdensity}
         
         else{
           
@@ -256,11 +260,11 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
           global.latrootdensity<-latrootnum/finalrootlength
           
           rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase, LatRootNum=latrootnum, FinalRootLength=finalrootlength, LatRootDensity=global.latrootdensity)
-          res[[i]]<-NULL}}
+          results[[i]]<-NULL}}
       
       names(rac)<-filenamesrac
-      names(res)<-filenamesrac
-      outputresults<-list(root=rac, res=res)}}
+      names(results)<-filenamesrac
+      outputresults<-list(root=rac, results=results)}}
 
   
   if (output=="dtp"){
@@ -302,9 +306,9 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
           
             dtp[[j]]<-NULL}}
       
-        res[[i]]<-dtp}
+        results[[i]]<-dtp}
       
-      if (length(gen)==0) {res[[i]]<-NULL}}
+      if (length(gen)==0) {results[[i]]<-NULL}}
       
       else {
         
@@ -313,10 +317,10 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
         global.latrootdensity<-latrootnum/finalrootlength
         
         rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase, LatRootNum=latrootnum, FinalRootLength=finalrootlength, LatRootDensity=global.latrootdensity)
-        res[[i]]<-NULL}}
+        results[[i]]<-NULL}}
     
     names(rac)<-filenamesrac
-    names(res)<-filenamesrac
-    outputresults<-list(root=rac, res=res)}
+    names(results)<-filenamesrac
+    outputresults<-list(root=rac, results=results)}
 
 return(outputresults)}

@@ -1,61 +1,4 @@
-# Creation of a function to calculate the distance between two points
-
-distance<-function(x1,y1,x2,y2){
-  a<-sqrt((x1-x2)^2+(y1-y2)^2)
-  return(a)}
-
-# Creation of a function to calculate the X and Y coordinates of an unknown point (Xn) on a line knowing two points (X1 and X2) 
-# of that line and the distance between X1 and Xn
-
-XYcoord<-function(x1,x2,y1,y2,d){
-  if (x1!=x2){
-    distx1x2<-distance(x1=x1, y1=y1, x2=x2, y2=y2)
-    
-    if (d>=(distx1x2/2)){
-      dd<-d
-      invslope<-(x2-x1)/(y2-y1)
-      b<-(-2*x1)-((2*x1)/(invslope^2))
-      a<-1+(1/(invslope^2))
-      c<-(x1^2)+((x1^2)/(invslope^2))-(dd^2)
-      delta<-(b^2)-4*a*c
-      Xn1<-((-b)+sqrt(delta))/(2*a)
-      Xn2<-((-b)-sqrt(delta))/(2*a)
-      Yn1<-(1/invslope)*Xn1+(y1-(1/invslope)*x1)
-      Yn2<-(1/invslope)*Xn2+(y1-(1/invslope)*x1)
-      if (Xn1>=min(x1,x2) & Xn1<=max(x1,x2)){result<-c(Xn1,Yn1)} else {result<-c(Xn2,Yn2)}}
-    
-    if (d<(distx1x2/2)){
-      dd<-distx1x2-d
-      invslope<-(x2-x1)/(y2-y1)
-      b<-(-2*x2)-((2*x2)/(invslope^2))
-      a<-1+(1/(invslope^2))
-      c<-(x2^2)+((x2^2)/(invslope^2))-(dd^2)
-      delta<-(b^2)-4*a*c
-      Xn1<-((-b)+sqrt(delta))/(2*a)
-      Xn2<-((-b)-sqrt(delta))/(2*a)
-      Yn1<-(1/invslope)*Xn1+(y2-(1/invslope)*x2)
-      Yn2<-(1/invslope)*Xn2+(y2-(1/invslope)*x2)
-      if (Xn1>=min(x1,x2) & Xn1<=max(x1,x2)){result<-c(Xn1,Yn1)} else {result<-c(Xn2,Yn2)}}
-    
-    return(result)}
-  
-  else{
-    Xn1<-x1
-    Yn1<-y1+d
-    Yn2<-y1-d
-    if (Yn1>=min(y1,y2) & Yn1<=max(y1,y2)){result<-c(Xn1,Yn1)} else {result<-c(Xn1,Yn2)}
-    return(result)}}
-
-# Calculation of a normal vector to a line (ax+by+c=0)
-# u is a direction vector of ax+by+c=0
-
-normal<-function(u){
-  n<-c(u[2], -u[1])
-  return(n)}
-
-################################################################################################
-
-trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", rotation=0, l.brangle, l.curv, l.tipangle, rsml.date=NULL){
+trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", rotation=0, l.brangle, l.curv, l.tipangle, rsml.date=NULL, vertical3d="y"){
   
   # Errors interception
   
@@ -72,7 +15,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
   if (is.null(inputrac)==FALSE|is.null(inputtps)==FALSE|is.null(inputlie)==FALSE){
     if (is.null(inputrac)==TRUE|is.null(inputtps)==TRUE|is.null(inputlie)==TRUE){stop("If inputrac/inputlie/inputtps is not NULL, inputrac/inputlie/inputtps must be provided")}}
   
-  if (is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
+  if (is.null(inputrac)==FALSE & is.null(res)==TRUE & unitlength!="px"){stop("If unitlength is not px, res must be specified")}
   if (is.null(res)==FALSE){
     if (mode(res)!="numeric"){stop("mode(res) must be numeric")}
     if (res<=0){stop("res must be a positive value")}}
@@ -95,10 +38,11 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
   if (mode(l.tipangle)!="numeric"){stop("mode(l.tipangle) must be numeric")}
   if (l.tipangle<=0) {stop("l.tipangle must be a positive value")}
   
-  if (is.null(inputrsml)==FALSE & is.null(rsml.date)==TRUE) {stop("If inputrsml is not NULL, rsml.date must be a positive numeric value")}
-  
   if (is.null(rsml.date)==FALSE){
-    if (rsml.date<=0|length(rsml.date)>1){stop("rsml.date must be a single positive value")}}
+    if (is.character(rsml.date)==TRUE|is.numeric(rsml.date)==TRUE){} else {stop("If rsml.date is not NULL, rsml.date must be a character string or a positive numeric value")}
+    if (is.numeric(rsml.date)==TRUE){if (rsml.date<=0|length(rsml.date)>1){stop("If mode(rsml.date) is numeric, rsml.date must be a single positive value")}}}
+  
+  if (vertical3d=="x"|vertical3d=="y"|vertical3d=="z") {} else {stop("vertical3d must be x, y, or z")} 
   
   # Reading of DART and rsml files
   
@@ -173,15 +117,15 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       LIE<-list()
       DATA<-list()
       TIME<-list()
-      time<-list(data.frame(Num=1, Date=rsml.date, CoulR=0, CoulG=0, CoulB=0))
+      res1<-c()
       filenameslie<-c()
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=TRUE)
       for (i in 1:length(RSML)){
-        for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
+        res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
         DATA<-append(DATA, RSML[[i]]$rac)
         LIE<-append(LIE, RSML[[i]]$lie)
+        TIME<-append(TIME, RSML[[i]]$tps)
         length1<-length(RSML[[i]]$rac)
-        TIME[(length(TIME)+1):(length(TIME)+length1)]<-time[1]
         if (length1>1){
           num<-c(1:length1)
           filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
@@ -217,16 +161,16 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           for (i in 1:length(DATA)) {if (filenamesrac[i]!=filenamestps[i]) {stop("Input rac/lie files and their corresponding tps files must have the same name")}}
           for (i in 1:length(DATA)) {if (length(TIME[[i]]$Date)!=(ncol(DATA[[i]])-5)) {stop("The number of observation dates between corresponding rac et tps files must be equal")}}}}
       
+      res1<-rep(res, length(filenames.rac))
+      
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=TRUE)
       
-      time<-list(data.frame(Num=1, Date=rsml.date, CoulR=0, CoulG=0, CoulB=0))
-      
       for (i in 1:length(RSML)){
-        for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
+        res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
         DATA<-append(DATA, RSML[[i]]$rac)
-        LIE<-append(LIE, RSML[[i]]$lie) 
+        LIE<-append(LIE, RSML[[i]]$lie)
+        TIME<-append(TIME, RSML[[i]]$tps)
         length1<-length(RSML[[i]]$rac)
-        TIME[(length(TIME)+1):(length(TIME)+length1)]<-time[1]
         if (length1>1){
           num<-c(1:length1)
           filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
@@ -244,16 +188,28 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
   
   rot.matrix<-matrix(c(cos(rotation), sin(rotation), -sin(rotation), cos(rotation)), nrow=2, ncol=2)
   
-  if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-  if (unitlength=="cm") {cunit<-(cm(1)/res)}
-  if (unitlength=="px") {cunit<-1}
   for (i in 1:length(LIE)){
+    if (is.null(inputrsml)==FALSE){res<-res1[i]}
+    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+    if (unitlength=="cm") {cunit<-(cm(1)/res)}
+    if (unitlength=="px") {cunit<-1}
+    if (!("Z" %in% colnames(LIE[[i]]))){
     LIE[[i]]$X<-LIE[[i]]$X*cunit
     LIE[[i]]$Y<-LIE[[i]]$Y*cunit
     newcoord<-rot.matrix%*%t(as.matrix(data.frame(LIE[[i]]$X, LIE[[i]]$Y)))
     LIE[[i]]$X<-newcoord[1,]
     LIE[[i]]$Y<-newcoord[2,]}
+    else {
+      LIE[[i]]$X<-LIE[[i]]$X*cunit
+      LIE[[i]]$Y<-LIE[[i]]$Y*cunit
+      LIE[[i]]$Z<-LIE[[i]]$Z*cunit}}
     
+  # Vertical direction vector
+  
+  if (vertical3d=="x") {dirvert<-c(1,0,0)}
+  if (vertical3d=="y") {dirvert<-c(0,1,0)}
+  if (vertical3d=="z") {dirvert<-c(0,0,1)}
+  
   # Creating vectors and matrices for root architecture parameters calculation
   
     filenames<-c()
@@ -282,31 +238,37 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       
       if (LIE[[i]]$Bran[j]=="true"){
         k<-k+1
-        if (j==1){
+        prec<-LIE[[i]]$Prec[j]
+        
+        if (prec==0){
           finallength[k]<-0
           m<-LIE[[i]]$Suiv[j]}
         
-        if (j>1){
+        if (prec!=0){
           prec<-LIE[[i]]$Prec[j]
-          finallength[k]<-sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[prec])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[prec])^2)
+          if (!("Z" %in% colnames(LIE[[i]]))) {finallength[k]<-sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[prec])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[prec])^2)} else {finallength[k]<-sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[prec])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[prec])^2+(LIE[[i]]$Z[j]-LIE[[i]]$Z[prec])^2)}
           m<-LIE[[i]]$Suiv[j]}
         
           while (m!=0){
             prec<-LIE[[i]]$Prec[m]
-            finallength[k]<-finallength[k]+sqrt((LIE[[i]]$X[m]-LIE[[i]]$X[prec])^2+(LIE[[i]]$Y[m]-LIE[[i]]$Y[prec])^2)
+            if (!("Z" %in% colnames(LIE[[i]]))) {finallength[k]<-finallength[k]+sqrt((LIE[[i]]$X[m]-LIE[[i]]$X[prec])^2+(LIE[[i]]$Y[m]-LIE[[i]]$Y[prec])^2)} else {finallength[k]<-finallength[k]+sqrt((LIE[[i]]$X[m]-LIE[[i]]$X[prec])^2+(LIE[[i]]$Y[m]-LIE[[i]]$Y[prec])^2+(LIE[[i]]$Z[m]-LIE[[i]]$Z[prec])^2)}
             m<-LIE[[i]]$Suiv[m]}}}
     
     finallength.lie[[i]]<-finallength}
     
-  # Calculating the X and Y coordinates of interpolated points
+  # Calculating the coordinates of interpolated points
   
   t<-1
   for (i in 1:length(LIE)){
     
+    LIE[[i]]$X<-LIE[[i]]$X-min(LIE[[i]]$X)
+    LIE[[i]]$Y<-LIE[[i]]$Y-min(LIE[[i]]$Y)
+    if ("Z" %in% colnames(LIE[[i]])) {LIE[[i]]$Z<-LIE[[i]]$Z-min(LIE[[i]]$Z)}
+    
     k<-0
     XYcurv<-list()
     XYangle<-list()
-    orientation<-c()
+    if (!("Z" %in% colnames(LIE[[i]]))) {orientation<-c()}
     tortuosity<-c()
     if (length(TIME)==1){
       num<-TIME[[1]]$Num
@@ -323,26 +285,39 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
         k<-k+1
         l<-1
         distangle<-0
+        prec1<-LIE[[i]]$Prec[j]
         if (finallength.lie[[i]][k]<l.tipangle) {tipangle[k,]<-NA}
         
         # Points used for root curvature calculation
         
         if (finallength.lie[[i]][k]<l.curv){XYcurv[[k]]<-NA}
         else {
-        XYcurv[[k]]<-matrix(ncol=2, nrow=floor(finallength.lie[[i]][k]/l.curv)+1)
-        if (j==1){
+          if (!("Z" %in% colnames(LIE[[i]]))) {XYcurv[[k]]<-matrix(ncol=2, nrow=floor(finallength.lie[[i]][k]/l.curv)+1)} else {XYcurv[[k]]<-matrix(ncol=3, nrow=floor(finallength.lie[[i]][k]/l.curv)+1)}
+        if (prec1==0){
+          if (!("Z" %in% colnames(LIE[[i]]))){
+              XYcurv[[k]][l,1]<-LIE[[i]]$X[j]
+              XYcurv[[k]][l,2]<-LIE[[i]]$Y[j]}
+          else {
               XYcurv[[k]][l,1]<-LIE[[i]]$X[j]
               XYcurv[[k]][l,2]<-LIE[[i]]$Y[j]
+              XYcurv[[k]][l,3]<-LIE[[i]]$Z[j]}
+          
               suiv<-LIE[[i]]$Suiv[j]
               l<-l+1}
         
-        if (j>1){
+        if (prec1!=0){
+          if (!("Z" %in% colnames(LIE[[i]]))){
+              XYcurv[[k]][l,1]<-LIE[[i]]$X[LIE[[i]]$Prec[j]]
+              XYcurv[[k]][l,2]<-LIE[[i]]$Y[LIE[[i]]$Prec[j]]}
+          else {
               XYcurv[[k]][l,1]<-LIE[[i]]$X[LIE[[i]]$Prec[j]]
               XYcurv[[k]][l,2]<-LIE[[i]]$Y[LIE[[i]]$Prec[j]]
+              XYcurv[[k]][l,3]<-LIE[[i]]$Z[LIE[[i]]$Prec[j]]}
+              
               suiv<-j
               l<-l+1}
                 
-        D<-distance(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+        if (!("Z" %in% colnames(LIE[[i]]))) {D<-distance2D(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {D<-distance3D(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], z1=XYcurv[[k]][l-1,3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
         distcurv<-D
         
         while (l<=floor(finallength.lie[[i]][k]/l.curv)+1){
@@ -351,41 +326,74 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           if (distcurv<l.curv){
             while (distcurv<l.curv){
               suiv<-LIE[[i]]$Suiv[suiv]
-              D<-distance(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+              if (!("Z" %in% colnames(LIE[[i]]))) {D<-distance2D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {D<-distance3D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], z1=LIE[[i]]$Z[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
               distcurv<-distcurv+D}
             
             if (distcurv==l.curv){
-              XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-              XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]}
+              else {
+                XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                XYcurv[[k]][l,3]<-LIE[[i]]$Z[suiv]}
               l<-l+1
               if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
               distcurv<-0}
             
             if (distcurv>l.curv){
-              xycoord<-XYcoord(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv-distcurv+D)
-              XYcurv[[k]][l,1]<-xycoord[1]
-              XYcurv[[k]][l,2]<-xycoord[2]
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                xycoord<-XYcoord2D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv-distcurv+D)
+                XYcurv[[k]][l,1]<-xycoord[1]
+                XYcurv[[k]][l,2]<-xycoord[2]}
+              else {
+                xycoord<-XYcoord3D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], z1=LIE[[i]]$Z[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv], d=l.curv-distcurv+D)
+                XYcurv[[k]][l,1]<-xycoord[1]
+                XYcurv[[k]][l,2]<-xycoord[2]
+                XYcurv[[k]][l,3]<-xycoord[3]}
               l<-l+1
+              
               if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
-              distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+              if (!("Z" %in% colnames(LIE[[i]]))) {distcurv<-distance2D(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {distcurv<-distance3D(x1=xycoord[1], y1=xycoord[2], z1=xycoord[3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
               
               if (distcurv==l.curv){
-                XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-                XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                if (!("Z" %in% colnames(LIE[[i]]))){
+                  XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                  XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]}
+                else {
+                  XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                  XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                  XYcurv[[k]][l,3]<-LIE[[i]]$Z[suiv]}
+                
                 l<-l+1
                 if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                 distcurv<-0}
               
               while (distcurv>l.curv){
-                xycoord<-XYcoord(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv)
-                XYcurv[[k]][l,1]<-xycoord[1]
-                XYcurv[[k]][l,2]<-xycoord[2]
+                if (!("Z" %in% colnames(LIE[[i]]))){
+                  xycoord<-XYcoord2D(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv)
+                  XYcurv[[k]][l,1]<-xycoord[1]
+                  XYcurv[[k]][l,2]<-xycoord[2]}
+                else {
+                  xycoord<-XYcoord3D(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], z1=XYcurv[[k]][l-1,3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv], d=l.curv)
+                  XYcurv[[k]][l,1]<-xycoord[1]
+                  XYcurv[[k]][l,2]<-xycoord[2]
+                  XYcurv[[k]][l,3]<-xycoord[3]}
+                
                 l<-l+1
                 if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
-                distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+                
+                if (!("Z" %in% colnames(LIE[[i]]))) {distcurv<-distance2D(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {distcurv<-distance3D(x1=xycoord[1], y1=xycoord[2], z1=xycoord[3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
+                
                 if (distcurv==l.curv){
-                  XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-                  XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                  if (!("Z" %in% colnames(LIE[[i]]))){
+                    XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                    XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]}
+                  else {
+                    XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                    XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                    XYcurv[[k]][l,3]<-LIE[[i]]$Z[suiv]}
+                  
                   l<-l+1
                   if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                   distcurv<-0}}
@@ -394,30 +402,58 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           
           # Second situation
           if (distcurv>l.curv){
-            xycoord<-XYcoord(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv-distcurv+D)
-            XYcurv[[k]][l,1]<-xycoord[1]
-            XYcurv[[k]][l,2]<-xycoord[2]
+            if (!("Z" %in% colnames(LIE[[i]]))){
+              xycoord<-XYcoord2D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv-distcurv+D)
+              XYcurv[[k]][l,1]<-xycoord[1]
+              XYcurv[[k]][l,2]<-xycoord[2]}
+            else {
+              xycoord<-XYcoord3D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], z1=LIE[[i]]$Z[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv], d=l.curv-distcurv+D)
+              XYcurv[[k]][l,1]<-xycoord[1]
+              XYcurv[[k]][l,2]<-xycoord[2]
+              XYcurv[[k]][l,3]<-xycoord[3]}
+            
             l<-l+1
             if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
-            distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+            if (!("Z" %in% colnames(LIE[[i]]))) {distcurv<-distance2D(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {distcurv<-distance3D(x1=xycoord[1], y1=xycoord[2], z1=xycoord[3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
             
             if (distcurv==l.curv){
-              XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-              XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]}
+              else {
+                XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                XYcurv[[k]][l,3]<-LIE[[i]]$Z[suiv]}
+              
               l<-l+1
               if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
               distcurv<-0}
             
             while (distcurv>l.curv){
-              xycoord<-XYcoord(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv)
-              XYcurv[[k]][l,1]<-xycoord[1]
-              XYcurv[[k]][l,2]<-xycoord[2]
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                xycoord<-XYcoord2D(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], d=l.curv)
+                XYcurv[[k]][l,1]<-xycoord[1]
+                XYcurv[[k]][l,2]<-xycoord[2]}
+              else {
+                xycoord<-XYcoord3D(x1=XYcurv[[k]][l-1,1], y1=XYcurv[[k]][l-1,2], z1=XYcurv[[k]][l-1,3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv], d=l.curv)
+                XYcurv[[k]][l,1]<-xycoord[1]
+                XYcurv[[k]][l,2]<-xycoord[2]
+                XYcurv[[k]][l,3]<-xycoord[3]}
+              
               l<-l+1
               if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
-              distcurv<-distance(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+              
+              if (!("Z" %in% colnames(LIE[[i]]))) {distcurv<-distance2D(x1=xycoord[1], y1=xycoord[2], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {distcurv<-distance3D(x1=xycoord[1], y1=xycoord[2], z1=xycoord[3], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
+              
               if (distcurv==l.curv){
-                XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-                XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                if (!("Z" %in% colnames(LIE[[i]]))){
+                  XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                  XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]}
+                else {
+                  XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+                  XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+                  XYcurv[[k]][l,3]<-LIE[[i]]$Z[suiv]}
+                
                 l<-l+1
                 if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
                 distcurv<-0}}
@@ -428,100 +464,172 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           
           # Third situation
           if (distcurv==l.curv){
-            XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
-            XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+            if (!("Z" %in% colnames(LIE[[i]]))){
+              XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+              XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]}
+            else {
+              XYcurv[[k]][l,1]<-LIE[[i]]$X[suiv]
+              XYcurv[[k]][l,2]<-LIE[[i]]$Y[suiv]
+              XYcurv[[k]][l,3]<-LIE[[i]]$Z[suiv]}
+            
             l<-l+1
             if (l>floor(finallength.lie[[i]][k]/l.curv)+1) {break}
             distcurv<-0
             suiv<-LIE[[i]]$Suiv[suiv]}
         
-          D<-distance(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])
+          if (!("Z" %in% colnames(LIE[[i]]))) {D<-distance2D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv])} else {D<-distance3D(x1=LIE[[i]]$X[LIE[[i]]$Prec[suiv]], y1=LIE[[i]]$Y[LIE[[i]]$Prec[suiv]], z1=LIE[[i]]$Z[LIE[[i]]$Prec[suiv]], x2=LIE[[i]]$X[suiv], y2=LIE[[i]]$Y[suiv], z2=LIE[[i]]$Z[suiv])}
           distcurv<-distcurv+D}}
       
       # Points used to calculate the branching angles of daughter roots on mother roots
         
-        if (j==1){
-          XYangle[[k]]<-NA
-          orientation[k]<-NA}
+        if (prec1==0) {if (!("Z" %in% colnames(LIE[[i]]))) {orientation[k]<-NA}}
+        
+        if (finallength.lie[[i]][k]<l.brangle){XYangle[[k]]<-NA}
         else{
-          if (finallength.lie[[i]][k]<l.brangle|(finallength.lie[[i]][DATA[[i]]$Mother[k]+1]-(cunit*DATA[[i]]$DBase[k]))<l.brangle){XYangle[[k]]<-NA}
-          else{
-            XYangle[[k]]<-matrix(nrow=3, ncol=2)
-            XYangle[[k]][1,1]<-LIE[[i]]$X[LIE[[i]]$Prec[j]]
-            XYangle[[k]][1,2]<-LIE[[i]]$Y[LIE[[i]]$Prec[j]]
+          if (!("Z" %in% colnames(LIE[[i]]))){
+            if (prec1!=0){
+              XYangle[[k]]<-matrix(nrow=3, ncol=2)
+              XYangle[[k]][1,1]<-LIE[[i]]$X[LIE[[i]]$Prec[j]]
+              XYangle[[k]][1,2]<-LIE[[i]]$Y[LIE[[i]]$Prec[j]]}
+            else {
+              XYangle[[k]]<-matrix(nrow=3, ncol=2)
+              XYangle[[k]][1,1]<-LIE[[i]]$X[j]
+              XYangle[[k]][1,2]<-LIE[[i]]$Y[j]}}
+          
+          else {
+            if (prec1!=0){
+              XYangle[[k]]<-matrix(nrow=3, ncol=3)
+              XYangle[[k]][1,1]<-LIE[[i]]$X[LIE[[i]]$Prec[j]]
+              XYangle[[k]][1,2]<-LIE[[i]]$Y[LIE[[i]]$Prec[j]]
+              XYangle[[k]][1,3]<-LIE[[i]]$Z[LIE[[i]]$Prec[j]]}
+            else{
+              XYangle[[k]]<-matrix(nrow=3, ncol=3)
+              XYangle[[k]][1,1]<-LIE[[i]]$X[j]
+              XYangle[[k]][1,2]<-LIE[[i]]$Y[j]
+              XYangle[[k]][1,3]<-LIE[[i]]$Z[j]}}
             
             # For daughter roots
             m<-j
             
             while(distangle<l.brangle){
               prec<-LIE[[i]]$Prec[m]
-              D<-distance(x1=LIE[[i]]$X[prec], x2=LIE[[i]]$X[m], y1=LIE[[i]]$Y[prec], y2=LIE[[i]]$Y[m])
+              
+              if (!("Z" %in% colnames(LIE[[i]]))) {
+                
+                if (prec!=0) {D<-distance2D(x1=LIE[[i]]$X[prec], x2=LIE[[i]]$X[m], y1=LIE[[i]]$Y[prec], y2=LIE[[i]]$Y[m])}
+                else {D<-0}} 
+              
+              else {
+                
+                if (prec!=0) {D<-distance3D(x1=LIE[[i]]$X[prec], x2=LIE[[i]]$X[m], y1=LIE[[i]]$Y[prec], y2=LIE[[i]]$Y[m], z1=LIE[[i]]$Z[prec], z2=LIE[[i]]$Z[m])}
+                else {D<-0}}
+              
               distangle<-distangle+D
               if (distangle<l.brangle) {m<-LIE[[i]]$Suiv[m]}}
             
             if (distangle==l.brangle){
-              XYangle[[k]][3,1]<-LIE[[i]]$X[m]
-              XYangle[[k]][3,2]<-LIE[[i]]$Y[m]}
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                XYangle[[k]][3,1]<-LIE[[i]]$X[m]
+                XYangle[[k]][3,2]<-LIE[[i]]$Y[m]}
+              else {
+                XYangle[[k]][3,1]<-LIE[[i]]$X[m]
+                XYangle[[k]][3,2]<-LIE[[i]]$Y[m]
+                XYangle[[k]][3,3]<-LIE[[i]]$Z[m]}}
             
             if (distangle>l.brangle){
-              xycoord<-XYcoord(x1=LIE[[i]]$X[prec], x2=LIE[[i]]$X[m], y1=LIE[[i]]$Y[prec], y2=LIE[[i]]$Y[m], d=l.brangle-distangle+D)
-              XYangle[[k]][3,1]<-xycoord[1]
-              XYangle[[k]][3,2]<-xycoord[2]}
+              if (!("Z" %in% colnames(LIE[[i]]))) {
+                xycoord<-XYcoord2D(x1=LIE[[i]]$X[prec], x2=LIE[[i]]$X[m], y1=LIE[[i]]$Y[prec], y2=LIE[[i]]$Y[m], d=l.brangle-distangle+D)
+                XYangle[[k]][3,1]<-xycoord[1]
+                XYangle[[k]][3,2]<-xycoord[2]}
+              else {
+                xycoord<-XYcoord3D(x1=LIE[[i]]$X[prec], x2=LIE[[i]]$X[m], y1=LIE[[i]]$Y[prec], y2=LIE[[i]]$Y[m], z1=LIE[[i]]$Z[prec], z2=LIE[[i]]$Z[m], d=l.brangle-distangle+D)
+                XYangle[[k]][3,1]<-xycoord[1]
+                XYangle[[k]][3,2]<-xycoord[2]
+                XYangle[[k]][3,3]<-xycoord[3]}}
             
             # For mother roots
+            
+            if (prec1==0){
+              
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                XYangle[[k]][2,1]<-XYangle[[k]][1,1]+0
+                XYangle[[k]][2,2]<-XYangle[[k]][1,2]+1}
+              else {
+                XYangle[[k]][2,1]<-XYangle[[k]][1,1]+dirvert[1]
+                XYangle[[k]][2,2]<-XYangle[[k]][1,2]+dirvert[2]
+                XYangle[[k]][2,3]<-XYangle[[k]][1,3]+dirvert[3]}}
+            
+            else{
+              
+              if((finallength.lie[[i]][DATA[[i]]$Mother[k]+1]-(cunit*DATA[[i]]$DBase[k]))<l.brangle) {XYangle[[k]]<-NA}
+              
+              else{
+            
             distangle<-0
             m<-LIE[[i]]$Prec[j]
             
             while(distangle<l.brangle){
               suiv<-LIE[[i]]$Suiv[m]
-              D<-distance(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[suiv], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[suiv])
+              if (!("Z" %in% colnames(LIE[[i]]))) {D<-distance2D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[suiv], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[suiv])} else {D<-distance3D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[suiv], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[suiv], z1=LIE[[i]]$Z[m], z2=LIE[[i]]$Z[suiv])}
               distangle<-distangle+D
               if (distangle<l.brangle) {m<-suiv}}
             
             if (distangle==l.brangle){
-              XYangle[[k]][2,1]<-LIE[[i]]$X[suiv]
-              XYangle[[k]][2,2]<-LIE[[i]]$Y[suiv]}
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                XYangle[[k]][2,1]<-LIE[[i]]$X[suiv]
+                XYangle[[k]][2,2]<-LIE[[i]]$Y[suiv]}
+              else {
+                XYangle[[k]][2,1]<-LIE[[i]]$X[suiv]
+                XYangle[[k]][2,2]<-LIE[[i]]$Y[suiv]
+                XYangle[[k]][2,3]<-LIE[[i]]$Z[suiv]}}
             
             if (distangle>l.brangle){
-              xycoord<-XYcoord(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[suiv], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[suiv], d=l.brangle-distangle+D)
-              XYangle[[k]][2,1]<-xycoord[1]
-              XYangle[[k]][2,2]<-xycoord[2]}}
+              if (!("Z" %in% colnames(LIE[[i]]))){
+                xycoord<-XYcoord2D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[suiv], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[suiv], d=l.brangle-distangle+D)
+                XYangle[[k]][2,1]<-xycoord[1]
+                XYangle[[k]][2,2]<-xycoord[2]}
+              else{
+                xycoord<-XYcoord3D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[suiv], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[suiv], z1=LIE[[i]]$Z[m], z2=LIE[[i]]$Z[suiv], d=l.brangle-distangle+D)
+                XYangle[[k]][2,1]<-xycoord[1]
+                XYangle[[k]][2,2]<-xycoord[2]
+                XYangle[[k]][2,3]<-xycoord[3]}}}}}
           
           # Calculating the Orientation of lateral roots
           
-          prec<-LIE[[i]]$Prec[j]
-          suivMR<-LIE[[i]]$Suiv[prec]
-          suivLR<-LIE[[i]]$Suiv[j]
-          u<-c(LIE[[i]]$X[suivMR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivMR]-LIE[[i]]$Y[prec])
-          while (u[1]==0 & u[2]==0){
-            suivMR<-LIE[[i]]$Suiv[suivMR]
-            u<-c(LIE[[i]]$X[suivMR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivMR]-LIE[[i]]$Y[prec])}
-          n<-normal(u)
-          lateral<-c(LIE[[i]]$X[j]-LIE[[i]]$X[prec], LIE[[i]]$Y[j]-LIE[[i]]$Y[prec])
-          while (lateral[1]==0 & lateral[2]==0){
-            lateral<-c(LIE[[i]]$X[suivLR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivLR]-LIE[[i]]$Y[prec])
-            suivLR<-LIE[[i]]$Suiv[suivLR]}
+          if (prec1!=0 & !("Z" %in% colnames(LIE[[i]]))) {
+            prec<-LIE[[i]]$Prec[j]
+            suivMR<-LIE[[i]]$Suiv[prec]
+            suivLR<-LIE[[i]]$Suiv[j]
+            u<-c(LIE[[i]]$X[suivMR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivMR]-LIE[[i]]$Y[prec])
+            while (u[1]==0 & u[2]==0){
+              suivMR<-LIE[[i]]$Suiv[suivMR]
+              u<-c(LIE[[i]]$X[suivMR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivMR]-LIE[[i]]$Y[prec])}
+            n<-normal(u)
+            lateral<-c(LIE[[i]]$X[j]-LIE[[i]]$X[prec], LIE[[i]]$Y[j]-LIE[[i]]$Y[prec])
+            while (lateral[1]==0 & lateral[2]==0){
+              lateral<-c(LIE[[i]]$X[suivLR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivLR]-LIE[[i]]$Y[prec])
+              suivLR<-LIE[[i]]$Suiv[suivLR]}
           
-          if (n%*%lateral>0){orientation[k]<-"Left"}
-          if (n%*%lateral<0){orientation[k]<-"Right"}
+            if (n%*%lateral>0){orientation[k]<-"Left"}
+            if (n%*%lateral<0){orientation[k]<-"Right"}
           
-          if (n%*%lateral==0 & suivLR==0){
-            if (runif(1, min=-1, max=1)>0) {orientation[k]<-"Left"} else {orientation[k]<-"Right"}}
+            if (n%*%lateral==0 & suivLR==0){
+              if (runif(1, min=-1, max=1)>0) {orientation[k]<-"Left"} else {orientation[k]<-"Right"}}
           
-          if (n%*%lateral==0 & suivLR!=0){
+            if (n%*%lateral==0 & suivLR!=0){
             
             while(n%*%lateral==0){
-              lateral<-c(LIE[[i]]$X[suivLR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivLR]-LIE[[i]]$Y[prec])
-              suivLR<-LIE[[i]]$Suiv[suivLR]
-              if (suivLR==0 & n%*%lateral==0){
-                if (runif(1, min=-1, max=1)>0) {orientation[k]<-"Left"} else {orientation[k]<-"Right"}
-                break}}
+                lateral<-c(LIE[[i]]$X[suivLR]-LIE[[i]]$X[prec], LIE[[i]]$Y[suivLR]-LIE[[i]]$Y[prec])
+                suivLR<-LIE[[i]]$Suiv[suivLR]
+                if (suivLR==0 & n%*%lateral==0){
+                  if (runif(1, min=-1, max=1)>0) {orientation[k]<-"Left"} else {orientation[k]<-"Right"}
+                  break}}
             
-            if (n%*%lateral>0){orientation[k]<-"Left"}
-            if (n%*%lateral<0){orientation[k]<-"Right"}}}
+              if (n%*%lateral>0){orientation[k]<-"Left"}
+              if (n%*%lateral<0){orientation[k]<-"Right"}}}
       
       # Calculating the points used for the calculation of tip angles
-      
+        
       if (finallength.lie[[i]][k]>=l.tipangle){
        
         m<-j
@@ -535,20 +643,20 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
             
             if (DATA[[i]][k,5+a]*cunit>=l.tipangle) {
             
-            disttip<-distance(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]])
-            if (disttip>l.tipangle){xycoord<-XYcoord(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], d=l.tipangle)}
-            if (disttip==l.tipangle){xycoord<-c(LIE[[i]]$X[LIE[[i]]$Prec[m]], LIE[[i]]$Y[LIE[[i]]$Prec[m]])}
+            if (!("Z" %in% colnames(LIE[[i]]))) {disttip<-distance2D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]])} else {disttip<-distance3D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], z1=LIE[[i]]$Z[m], z2=LIE[[i]]$Z[LIE[[i]]$Prec[m]])}
+            if (disttip>l.tipangle){if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-XYcoord2D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], d=l.tipangle)} else {xycoord<-XYcoord3D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], z1=LIE[[i]]$Z[m], z2=LIE[[i]]$Z[LIE[[i]]$Prec[m]], d=l.tipangle)}}
+            if (disttip==l.tipangle){if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-c(LIE[[i]]$X[LIE[[i]]$Prec[m]], LIE[[i]]$Y[LIE[[i]]$Prec[m]])} else {xycoord<-c(LIE[[i]]$X[LIE[[i]]$Prec[m]], LIE[[i]]$Y[LIE[[i]]$Prec[m]], LIE[[i]]$Z[LIE[[i]]$Prec[m]])}}
             if (disttip<l.tipangle){
               prec1<-LIE[[i]]$Prec[m]
               while(disttip<l.tipangle){
                 prec2<-LIE[[i]]$Prec[prec1]
-                D<-distance(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2])
+                if (!("Z" %in% colnames(LIE[[i]]))) {D<-distance2D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2])} else {D<-distance3D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], z1=LIE[[i]]$Z[prec1], z2=LIE[[i]]$Z[prec2])}
                 disttip<-disttip+D
                 if (disttip<l.tipangle) {prec1<-prec2}}
-              if (disttip==l.tipangle){xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2])}
-              if (disttip>l.tipangle) {xycoord<-XYcoord(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], d=l.tipangle-disttip+D)}}
+              if (disttip==l.tipangle){if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2])} else {xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2], LIE[[i]]$Z[prec2])}}
+              if (disttip>l.tipangle) {if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-XYcoord2D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], d=l.tipangle-disttip+D)} else {xycoord<-XYcoord3D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], z1=LIE[[i]]$Z[prec1], z2=LIE[[i]]$Z[prec2], d=l.tipangle-disttip+D)}}}
             
-            tipangle[k,a:(b-1)]<-acos((c(0,1)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}}
+              if (!("Z" %in% colnames(LIE[[i]]))) {tipangle[k,a:(b-1)]<-acos((c(0,1)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle} else {tipangle[k,a:(b-1)]<-acos((dirvert%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2], LIE[[i]]$Z[m]-xycoord[3]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2+(LIE[[i]]$Z[m]-xycoord[3])^2)))*cunitangle}}}
           
           m<-LIE[[i]]$Suiv[m]}
       
@@ -556,28 +664,30 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
                 
           a<-LIE[[i]]$Date[m]
         
-          disttip<-distance(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]])
-          if (disttip>l.tipangle){xycoord<-XYcoord(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], d=l.tipangle)}
-          if (disttip==l.tipangle){xycoord<-c(LIE[[i]]$X[LIE[[i]]$Prec[m]], LIE[[i]]$Y[LIE[[i]]$Prec[m]])}
+          if (!("Z" %in% colnames(LIE[[i]]))) {disttip<-distance2D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]])} else {disttip<-distance3D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], z1=LIE[[i]]$Z[m], z2=LIE[[i]]$Z[LIE[[i]]$Prec[m]])}
+          if (disttip>l.tipangle){if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-XYcoord2D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], d=l.tipangle)} else {xycoord<-XYcoord3D(x1=LIE[[i]]$X[m], x2=LIE[[i]]$X[LIE[[i]]$Prec[m]], y1=LIE[[i]]$Y[m], y2=LIE[[i]]$Y[LIE[[i]]$Prec[m]], z1=LIE[[i]]$Z[m], z2=LIE[[i]]$Z[LIE[[i]]$Prec[m]], d=l.tipangle)}}
+          if (disttip==l.tipangle){if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-c(LIE[[i]]$X[LIE[[i]]$Prec[m]], LIE[[i]]$Y[LIE[[i]]$Prec[m]])} else {xycoord<-c(LIE[[i]]$X[LIE[[i]]$Prec[m]], LIE[[i]]$Y[LIE[[i]]$Prec[m]], LIE[[i]]$Z[LIE[[i]]$Prec[m]])}}
           if (disttip<l.tipangle){
             prec1<-LIE[[i]]$Prec[m]
             while(disttip<l.tipangle){
               prec2<-LIE[[i]]$Prec[prec1]
-              D<-distance(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2])
+              if (!("Z" %in% colnames(LIE[[i]]))) {D<-distance2D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2])} else {D<-distance3D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], z1=LIE[[i]]$Z[prec1], z2=LIE[[i]]$Z[prec2])}
               disttip<-disttip+D
               if (disttip<l.tipangle) {prec1<-prec2}}
-            if (disttip==l.tipangle){xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2])}
-            if (disttip>l.tipangle) {xycoord<-XYcoord(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], d=l.tipangle-disttip+D)}}
+            if (disttip==l.tipangle){if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2])} else {xycoord<-c(LIE[[i]]$X[prec2], LIE[[i]]$Y[prec2], LIE[[i]]$Z[prec2])}}
+            if (disttip>l.tipangle) {if (!("Z" %in% colnames(LIE[[i]]))) {xycoord<-XYcoord2D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], d=l.tipangle-disttip+D)} else {xycoord<-XYcoord3D(x1=LIE[[i]]$X[prec1], x2=LIE[[i]]$X[prec2], y1=LIE[[i]]$Y[prec1], y2=LIE[[i]]$Y[prec2], z1=LIE[[i]]$Z[prec1], z2=LIE[[i]]$Z[prec2], d=l.tipangle-disttip+D)}}}
           
-          tipangle[k,(a:ncol(tipangle))]<-acos((c(0,1)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle}}
+          if (!("Z" %in% colnames(LIE[[i]]))) {tipangle[k,(a:ncol(tipangle))]<-acos((c(0,1)%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2)))*cunitangle} else {tipangle[k,(a:ncol(tipangle))]<-acos((dirvert%*%c(LIE[[i]]$X[m]-xycoord[1], LIE[[i]]$Y[m]-xycoord[2], LIE[[i]]$Z[m]-xycoord[3]))/(sqrt((LIE[[i]]$X[m]-xycoord[1])^2+(LIE[[i]]$Y[m]-xycoord[2])^2+(LIE[[i]]$Z[m]-xycoord[3])^2)))*cunitangle}}}
       
       # Tortuosity
       
       m<-j
+      prec<-LIE[[i]]$Prec[j]
       
       while (LIE[[i]]$Apic[m]!="true"){m<-LIE[[i]]$Suiv[m]}
       
-      if (k==1) {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2)} else {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[LIE[[i]]$Prec[j]]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[LIE[[i]]$Prec[j]]-LIE[[i]]$Y[m])^2)}}}
+      if (prec==0) {if (!("Z" %in% colnames(LIE[[i]]))) {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2)} else {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2+(LIE[[i]]$Z[j]-LIE[[i]]$Z[m])^2)}} 
+      else {if (!("Z" %in% colnames(LIE[[i]]))) {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[prec]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[prec]-LIE[[i]]$Y[m])^2)} else {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[prec]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[prec]-LIE[[i]]$Y[m])^2+(LIE[[i]]$Z[prec]-LIE[[i]]$Z[m])^2)}}}}
     
     tip[[i]]<-data.frame(DATA[[i]]$Root, tipangle)
     colnames(tip[[i]])<-c("Root", paste("Ang.Date", t(num), sep=""))
@@ -592,11 +702,18 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       
       if (class(XYangle[[j]])=="matrix"){
         
-        VECTangle<-matrix(nrow=2, ncol=2)
-        VECTangle[1,]<-XYangle[[j]][2,]-XYangle[[j]][1,] # For mother roots
-        VECTangle[2,]<-XYangle[[j]][3,]-XYangle[[j]][1,] # For daugther roots
-        normVECTangle<-sqrt(VECTangle[,1]^2+VECTangle[,2]^2)
-        br.angle[j]<-acos((VECTangle[1,]%*%VECTangle[2,])/(normVECTangle[1]*normVECTangle[2]))*cunitangle} 
+        if (!("Z" %in% colnames(LIE[[i]]))){
+          VECTangle<-matrix(nrow=2, ncol=2)
+          VECTangle[1,]<-XYangle[[j]][2,]-XYangle[[j]][1,] # For mother roots
+          VECTangle[2,]<-XYangle[[j]][3,]-XYangle[[j]][1,] # For daugther roots
+          normVECTangle<-sqrt(VECTangle[,1]^2+VECTangle[,2]^2)
+          br.angle[j]<-acos((VECTangle[1,]%*%VECTangle[2,])/(normVECTangle[1]*normVECTangle[2]))*cunitangle}
+        else {
+          VECTangle<-matrix(nrow=2, ncol=3)
+          VECTangle[1,]<-XYangle[[j]][2,]-XYangle[[j]][1,] # For mother roots
+          VECTangle[2,]<-XYangle[[j]][3,]-XYangle[[j]][1,] # For daugther roots
+          normVECTangle<-sqrt(VECTangle[,1]^2+VECTangle[,2]^2+VECTangle[,3]^2)
+          br.angle[j]<-acos((VECTangle[1,]%*%VECTangle[2,])/(normVECTangle[1]*normVECTangle[2]))*cunitangle}} 
       
       else {br.angle[j]<-NA}
       
@@ -607,7 +724,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           VECTcurv<-diff(XYcurv[[j]])
           angle<-c()
           for (k in 1:(nrow(XYcurv[[j]])-2)){
-            ratio<-(VECTcurv[k,]%*%VECTcurv[k+1,])/(sqrt(VECTcurv[k,1]^2+VECTcurv[k,2]^2)*sqrt(VECTcurv[k+1,1]^2+VECTcurv[k+1,2]^2))
+            if (!("Z" %in% colnames(LIE[[i]]))) {ratio<-(VECTcurv[k,]%*%VECTcurv[k+1,])/(sqrt(VECTcurv[k,1]^2+VECTcurv[k,2]^2)*sqrt(VECTcurv[k+1,1]^2+VECTcurv[k+1,2]^2))} else {ratio<-(VECTcurv[k,]%*%VECTcurv[k+1,])/(sqrt(VECTcurv[k,1]^2+VECTcurv[k,2]^2+VECTcurv[k,3]^2)*sqrt(VECTcurv[k+1,1]^2+VECTcurv[k+1,2]^2+VECTcurv[k+1,3]^2))}
             if (ratio>1) {ratio<-1} # The value of a cosinus must be < or equal to 1
             if (ratio<(1*(-1))) {ratio<-1*(-1)} # The value of a cosinus must be > or equal to -1
             angle[k]<-acos(ratio)*cunitangle}
@@ -624,7 +741,8 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
         meananglevar[j]<-NA
         sdanglevar[j]<-NA}}
   
-  rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, DApp=DATA[[i]]$DApp, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Orientation=orientation, Branching.Angle=br.angle, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}
+  if (!("Z" %in% colnames(LIE[[i]]))) {rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Orientation=orientation, Branching.Angle=br.angle, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}
+  else {rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Branching.Angle=br.angle, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}}
   
   names(rac)<-filenameslie
   names(tip)<-filenameslie
