@@ -5,7 +5,7 @@
 }
 \usage{
 archigrow(inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px",
-          rsml.date="age", rsml.connect=TRUE, plot=TRUE, export.colors=FALSE,
+          rsml.date="age", rsml.connect=TRUE, plot=TRUE, twod=NULL, export.colors=FALSE,
           unittime=NULL, unitangle="d", rotation=0, numdate=NULL, finalscale=NULL,
           coldyn=NULL, GRscale=NULL, main=NULL, xlab=NULL, ylab=NULL, zlab=NULL,
           xlim=NULL, ylim=NULL, zlim=NULL, ...)}
@@ -18,6 +18,7 @@ archigrow(inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px
   \item{rsml.date}{Only used for RSML files. A numeric value specifying the root system age (the unit of time is defined by the user). If \code{rsml.date=NULL}, a default value of 1 is used by the function. If the root system age is stored as a continuous function along the root segments, a character string specifying the name/label of the function can be used (see details).}
   \item{rsml.connect}{Only used for RSML files. A logical value that must be specified when \code{is.null(inputrsml)=FALSE}. If \code{TRUE}, the lateral roots are connected to their parent root (see details). If \code{FALSE}, no connection is made between daughter and mother roots.}
   \item{plot}{A logical value. Should the root system(s) be plotted? \code{TRUE} is yes, \code{FALSE} is no.}
+  \item{twod}{When RSML files contain 3D RSA data, should the root systems be plotted in 2D? This argument can be NULL (3D plots) or a character vector giving the name of the axes to plot (can be c(\dQuote{x}, \dQuote{y}), c(\dQuote{x}, \dQuote{z}), or c(\dQuote{y}, \dQuote{z})).}
   \item{export.colors}{A logical value. Should the color values be exported? If \code{TRUE}, a matrix giving the color code of each root at each observation date is exported. If \code{FALSE}, no color matrix is exported.}
   \item{unittime}{A character string specifying the unit of time used to express the data (all character strings are valid for this argument). For RSML files, unittime is imported from the metadata and does not need to be specified as an argument.}
   \item{unitangle}{A character string specifying the unit that must be used by the function to express the calculated angles. The value acceptable for this argument could be either \dQuote{d} for degrees (default value) or \dQuote{r} for radians.}
@@ -33,7 +34,7 @@ archigrow(inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px
   \item{xlim}{A numeric vector (length=2) giving the X limits of the plot using the same unit as \code{unitlength}.}
   \item{ylim}{A numeric vector (length=2) giving the Y limits of the plot using the same unit as \code{unitlength}.}
   \item{zlim}{A numeric vector (length=2) giving the Z limits of the plot using the same unit as \code{unitlength}.}
-  \item{...}{Additional graphical parameters (see details)}
+  \item{...}{Additional graphical parameters (see details).}
 }
 \details{
 

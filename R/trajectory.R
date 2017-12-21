@@ -1,4 +1,4 @@
-trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", rotation=0, l.brangle, l.curv, l.tipangle, rsml.date=NULL, vertical3d="y"){
+trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", unitangle="d", rotation=0, l.brangle, l.curv, l.tipangle, rsml.date=NULL, vertical3d="y", plot=NULL, twod=NULL, colangle=NULL, export.colors=FALSE, BRscale=NULL, main=NULL, xlim=NULL, ylim=NULL, zlim=NULL, xlab=NULL, ylab=NULL, zlab=NULL, ...){
   
   # Errors interception
   
@@ -42,7 +42,24 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
     if (is.character(rsml.date)==TRUE|is.numeric(rsml.date)==TRUE){} else {stop("If rsml.date is not NULL, rsml.date must be a character string or a positive numeric value")}
     if (is.numeric(rsml.date)==TRUE){if (rsml.date<=0|length(rsml.date)>1){stop("If mode(rsml.date) is numeric, rsml.date must be a single positive value")}}}
   
-  if (vertical3d=="x"|vertical3d=="y"|vertical3d=="z") {} else {stop("vertical3d must be x, y, or z")} 
+  if (vertical3d=="x"|vertical3d=="y"|vertical3d=="z") {} else {stop("vertical3d must be x, y, or z")}
+  
+  if (is.null(plot)==FALSE){if (plot=="branching"|plot=="direction") {} else {stop("If plot is not NULL, plot most be branching or direction")}}
+  
+  if (is.null(export.colors)==FALSE) {if (mode(export.colors)!="logical"){stop("mode(export.colors) must be logical")}}
+  
+  if (is.null(plot)==FALSE & is.null(colangle)==TRUE){stop("If plot is not NULL, colangle must be specified")}
+  
+  if (is.null(BRscale)==FALSE){
+    if (mode(BRscale)!="numeric") {stop("mode(BRscale) must be numeric")}
+    if (length(BRscale)!=2|diff(BRscale)==0){stop("length(BRscale) must be equal to 2: c(min, max)")}
+    if (BRscale[1]<0|BRscale[2]<0){stop("BRscale must be a vector of positive values")}}
+  
+  if (is.null(twod)==FALSE){
+    if (mode(twod)!="character"){stop("mode(twod) must be character")}
+    if (length(twod)!=2){stop("twod must be a vector of 2 character elements")}
+    twod<-sort(twod)
+    if (all.equal(twod, c("x", "y"))==TRUE|all.equal(twod, c("x", "z"))==TRUE|all.equal(twod, c("y", "z"))==TRUE) {} else {stop("twod must be c(x,y), c(x,z), or c(y,z)")}}
   
   # Reading of DART and rsml files
   
@@ -97,6 +114,11 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
     
     TIME<-lapply(paste(path.tps, "/", filenames.tps, sep=""), read.table, header=TRUE)
+    
+    #Unit conversion DART files
+    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+    if (unitlength=="cm") {cunit<-(cm(1)/res)}
+    if (unitlength=="px") {cunit<-1}
   
     if (length(LIE)!=length(DATA)) {stop("The number of rac files in inputrac and lie files in inputlie must be equal")}
     else {
@@ -118,10 +140,12 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       DATA<-list()
       TIME<-list()
       res1<-c()
+      unitlength1<-c()
       filenameslie<-c()
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=TRUE)
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         DATA<-append(DATA, RSML[[i]]$rac)
         LIE<-append(LIE, RSML[[i]]$lie)
         TIME<-append(TIME, RSML[[i]]$tps)
@@ -130,7 +154,37 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           num<-c(1:length1)
           filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}
+          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion RSML
+      cunit1<-vector(length=length(res1))
+      
+      for (i in 1:length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}
     
     else { # DART and rsml files
       
@@ -162,11 +216,13 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           for (i in 1:length(DATA)) {if (length(TIME[[i]]$Date)!=(ncol(DATA[[i]])-5)) {stop("The number of observation dates between corresponding rac et tps files must be equal")}}}}
       
       res1<-rep(res, length(filenames.rac))
+      unitlength1<-rep(unitlength, length(filenames.rac))
       
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=TRUE)
       
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         DATA<-append(DATA, RSML[[i]]$rac)
         LIE<-append(LIE, RSML[[i]]$lie)
         TIME<-append(TIME, RSML[[i]]$tps)
@@ -175,7 +231,41 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
           num<-c(1:length1)
           filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}}
+          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion DART and RSML
+      cunit1<-vector(length=length(res1))
+      
+      if (unitlength=="mm") {cunit1[1:length(filenames.rac)]<-(10*cm(1)/res)}
+      if (unitlength=="cm") {cunit1[1:length(filenames.rac)]<-cm(1)/res}
+      if (unitlength=="px") {cunit1[1:length(filenames.rac)]<-1}
+      
+      for (i in (length(filenames.rac)+1):length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}}
   
   # Unit conversion and rotation
   
@@ -189,10 +279,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
   rot.matrix<-matrix(c(cos(rotation), sin(rotation), -sin(rotation), cos(rotation)), nrow=2, ncol=2)
   
   for (i in 1:length(LIE)){
-    if (is.null(inputrsml)==FALSE){res<-res1[i]}
-    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-    if (unitlength=="cm") {cunit<-(cm(1)/res)}
-    if (unitlength=="px") {cunit<-1}
+    if (is.null(inputrsml)==FALSE){cunit<-cunit1[i]}
     if (!("Z" %in% colnames(LIE[[i]]))){
     LIE[[i]]$X<-LIE[[i]]$X*cunit
     LIE[[i]]$Y<-LIE[[i]]$Y*cunit
@@ -268,6 +355,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
     k<-0
     XYcurv<-list()
     XYangle<-list()
+    XYdir<-list()
     if (!("Z" %in% colnames(LIE[[i]]))) {orientation<-c()}
     tortuosity<-c()
     if (length(TIME)==1){
@@ -684,21 +772,50 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       m<-j
       prec<-LIE[[i]]$Prec[j]
       
+      if (!("Z" %in% colnames(LIE[[i]]))) {XYdir[[k]]<-matrix(nrow=2, ncol=2)} else {XYdir[[k]]<-matrix(nrow=2, ncol=3)}
+      
       while (LIE[[i]]$Apic[m]!="true"){m<-LIE[[i]]$Suiv[m]}
       
-      if (prec==0) {if (!("Z" %in% colnames(LIE[[i]]))) {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2)} else {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2+(LIE[[i]]$Z[j]-LIE[[i]]$Z[m])^2)}} 
-      else {if (!("Z" %in% colnames(LIE[[i]]))) {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[prec]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[prec]-LIE[[i]]$Y[m])^2)} else {tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[prec]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[prec]-LIE[[i]]$Y[m])^2+(LIE[[i]]$Z[prec]-LIE[[i]]$Z[m])^2)}}}}
+      if (prec==0) {
+        if (!("Z" %in% colnames(LIE[[i]]))) {
+          tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2)
+          XYdir[[k]][1,]<-c(LIE[[i]]$X[j], LIE[[i]]$Y[j])
+          XYdir[[k]][2,]<-c(LIE[[i]]$X[m], LIE[[i]]$Y[m])}
+        
+        else {
+          tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[j]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[j]-LIE[[i]]$Y[m])^2+(LIE[[i]]$Z[j]-LIE[[i]]$Z[m])^2)
+          XYdir[[k]][1,]<-c(LIE[[i]]$X[j], LIE[[i]]$Y[j], LIE[[i]]$Z[j])
+          XYdir[[k]][2,]<-c(LIE[[i]]$X[m], LIE[[i]]$Y[m], LIE[[i]]$Z[j])}} 
+      
+      else {
+        if (!("Z" %in% colnames(LIE[[i]]))) {
+          tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[prec]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[prec]-LIE[[i]]$Y[m])^2)
+          XYdir[[k]][1,]<-c(LIE[[i]]$X[prec], LIE[[i]]$Y[prec])
+          XYdir[[k]][2,]<-c(LIE[[i]]$X[m], LIE[[i]]$Y[m])}
+        
+        else {
+          tortuosity[k]<-finallength.lie[[i]][k]/sqrt((LIE[[i]]$X[prec]-LIE[[i]]$X[m])^2+(LIE[[i]]$Y[prec]-LIE[[i]]$Y[m])^2+(LIE[[i]]$Z[prec]-LIE[[i]]$Z[m])^2)
+          XYdir[[k]][1,]<-c(LIE[[i]]$X[prec], LIE[[i]]$Y[prec], LIE[[i]]$Z[prec])
+          XYdir[[k]][2,]<-c(LIE[[i]]$X[m], LIE[[i]]$Y[m], LIE[[i]]$Z[j])}}}}
     
     tip[[i]]<-data.frame(DATA[[i]]$Root, tipangle)
     colnames(tip[[i]])<-c("Root", paste("Ang.Date", t(num), sep=""))
-  
-  # Calculating branching angles and curvatures
+    
+  # Calculating branching angles and curvatures + root growth direction relative to the vertical
   
     br.angle<-c()
+    gr.dir<-c()
     meananglevar<-c()
     sdanglevar<-c()
     
     for (j in 1:length(XYangle)){
+      
+      if (class(XYdir[[j]])=="matrix"){
+        
+        VECTangle<-XYdir[[j]][2,]-XYdir[[j]][1,]
+        normVECTangle<-sqrt(VECTangle[1]^2+VECTangle[2]^2)
+        if (length(VECTangle)==2) {gr.dir[j]<-acos((VECTangle%*%c(0,1))/(normVECTangle*1))*cunitangle}
+        if (length(VECTangle)==3) {gr.dir[j]<-acos((VECTangle%*%dirvert)/(normVECTangle*1))*cunitangle}}
       
       if (class(XYangle[[j]])=="matrix"){
         
@@ -741,8 +858,182 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
         meananglevar[j]<-NA
         sdanglevar[j]<-NA}}
   
-  if (!("Z" %in% colnames(LIE[[i]]))) {rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Orientation=orientation, Branching.Angle=br.angle, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}
-  else {rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Branching.Angle=br.angle, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}}
+  if (!("Z" %in% colnames(LIE[[i]]))) {rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Orientation=orientation, Branching.Angle=br.angle, Growth.Direction=gr.dir, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}
+  else {rac[[i]]<-data.frame(Root=DATA[[i]]$Root, Mother=DATA[[i]]$Mother, Ord=DATA[[i]]$Ord, DBase=DATA[[i]]$DBase*cunit, FinalRootLength=finallength.lie[[i]], Tortuosity=tortuosity, Branching.Angle=br.angle, Growth.Direction=gr.dir, Mean.Curv=meananglevar, SD.Curv=sdanglevar)}
+  
+  #Plotting root system with a color code for the branching angle
+  
+  if (is.null(plot)==FALSE){
+    
+  if (plot=="branching"){
+  
+    if (is.null(BRscale)==TRUE) {
+      maxi<-max(rac[[i]]$Branching.Angle[2:length(rac[[i]]$Branching.Angle)], na.rm=TRUE)
+      mini<-min(rac[[i]]$Branching.Angle[2:length(rac[[i]]$Branching.Angle)], na.rm=TRUE)}
+    else {
+      maxi<-max(BRscale)
+      mini<-min(BRscale)}
+    branchingangled<-(rac[[i]]$Branching.Angle[2:length(rac[[i]]$Branching.Angle)]-mini)/(maxi-mini)
+    posNEG<-which(branchingangled<0)
+    pos1plus<-which(branchingangled>1)
+    posNA<-which(is.na(branchingangled))
+    branchingangled[is.na(branchingangled)|branchingangled<0|branchingangled>1]<-0
+    pal<-colorRamp(colangle)
+    colors<-rgb(pal(branchingangled), maxColorValue=255)
+    colors[posNA]<-"black"
+    colors[posNEG]<-"black"
+    colors[pos1plus]<-"black"
+    colors<-c("black", colors)
+    if (export.colors==TRUE){rac[[i]]$Colors<-colors}}
+    
+  if (plot=="direction"){
+    
+    if (is.null(BRscale)==TRUE) {
+      maxi<-max(rac[[i]]$Growth.Direction[2:length(rac[[i]]$Growth.Direction)], na.rm=TRUE)
+      mini<-min(rac[[i]]$Growth.Direction[2:length(rac[[i]]$Growth.Direction)], na.rm=TRUE)}
+    else {
+      maxi<-max(BRscale)
+      mini<-min(BRscale)}
+    growthdirectiond<-(rac[[i]]$Growth.Direction[2:length(rac[[i]]$Growth.Direction)]-mini)/(maxi-mini)
+    posNEG<-which(growthdirectiond<0)
+    pos1plus<-which(growthdirectiond>1)
+    posNA<-which(is.na(growthdirectiond))
+    growthdirectiond[is.na(growthdirectiond)|growthdirectiond<0|growthdirectiond>1]<-0
+    pal<-colorRamp(colangle)
+    colors<-rgb(pal(growthdirectiond), maxColorValue=255)
+    colors[posNA]<-"black"
+    colors[posNEG]<-"black"
+    colors[pos1plus]<-"black"
+    colors<-c("black", colors)
+    if (export.colors==TRUE){rac[[i]]$Colors<-colors}}
+  
+  LIE[[i]]$X<-LIE[[i]]$X-min(LIE[[i]]$X)
+  LIE[[i]]$Y<-LIE[[i]]$Y-min(LIE[[i]]$Y)
+  if ("Z" %in% colnames(LIE[[i]])) {LIE[[i]]$Z<-LIE[[i]]$Z-min(LIE[[i]]$Z)}
+  minx<-min(LIE[[i]]$X)
+  maxx<-max(LIE[[i]]$X)
+  miny<-min(LIE[[i]]$Y)
+  maxy<-max(LIE[[i]]$Y)
+  if ("Z" %in% colnames(LIE[[i]])){
+    minz<-min(LIE[[i]]$Z)
+    maxz<-max(LIE[[i]]$Z)}
+  if (is.null(main)==TRUE){main1<-filenameslie[i]} else {main1<-main}
+  if (is.null(xlim)==TRUE){xlim1<-c(minx,maxx)} else {xlim1<-xlim}
+  if (is.null(ylim)==TRUE){ylim1<-c(maxy,miny)} else {ylim1<-ylim}
+  if ("Z" %in% colnames(LIE[[i]]) & is.null(zlim)==TRUE){zlim1<-c(minz,maxz)} else {zlim1<-zlim}
+  if (is.null(xlab)==TRUE){xlab1<-paste("X (", unitlength, ")", sep="")} else {xlab1<-xlab}
+  if (is.null(ylab)==TRUE){ylab1<-paste("Y (", unitlength, ")", sep="")} else {ylab1<-ylab}
+  if ("Z" %in% colnames(LIE[[i]]) & is.null(zlab)==TRUE){zlab1<-paste("Z (", unitlength, ")", sep="")} else {zlab1<-zlab}
+  
+  if (!("Z" %in% colnames(LIE[[i]]))){
+    
+    plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+    r<-0
+    for (k in 1:nrow(LIE[[i]])){
+      if(LIE[[i]]$Bran[k]=="true"){
+        r<-r+1
+        a<-LIE[[i]]$Prec[k]
+        b<-LIE[[i]]$Date[k]
+        if (a!=0) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=colors[r],...)}
+        m<-LIE[[i]]$Suiv[k]
+        if (m!=0){
+          while (LIE[[i]]$Apic[m]=="false"){
+            a<-LIE[[i]]$Prec[m]
+            b<-LIE[[i]]$Date[m]
+            segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r],...)
+            m<-LIE[[i]]$Suiv[m]}
+          if (LIE[[i]]$Apic[m]=="true"){
+            a<-LIE[[i]]$Prec[m]
+            b<-LIE[[i]]$Date[m]
+            segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r],...)}}}}}
+  
+  else {
+    
+    if (is.null(twod)==TRUE){
+    
+    root<-sum(LIE[[i]]$Suiv==0)
+    end<-which(LIE[[i]]$Suiv==0)
+    open3d()
+    plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
+    for (k in 1:root){
+      if (k==1) {
+        dataroot<-as.matrix(LIE[[i]][k:end[k],7:9])} 
+      else {
+        if (LIE[[i]]$Prec[end[k-1]+1]!=0){
+          dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])
+          dataroot<-rbind(LIE[[i]][LIE[[i]]$Num==LIE[[i]]$Prec[end[k-1]+1],7:9], dataroot)}
+        else{
+          dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])}}
+  
+      lines3d(dataroot, col=colors[k], smooth=FALSE, ...)}}
+    
+    else {
+      
+      if (all.equal(twod, c("x", "y"))==TRUE){
+        
+        plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+        r<-0
+        for (k in 1:nrow(LIE[[i]])){
+          if(LIE[[i]]$Bran[k]=="true"){
+            r<-r+1
+            a<-LIE[[i]]$Prec[k]
+            b<-LIE[[i]]$Date[k]
+            if (a!=0) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=colors[r],...)}
+            m<-LIE[[i]]$Suiv[k]
+            if (m!=0){
+              while (LIE[[i]]$Apic[m]=="false"){
+                a<-LIE[[i]]$Prec[m]
+                b<-LIE[[i]]$Date[m]
+                segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r],...)
+                m<-LIE[[i]]$Suiv[m]}
+              if (LIE[[i]]$Apic[m]=="true"){
+                a<-LIE[[i]]$Prec[m]
+                b<-LIE[[i]]$Date[m]
+                segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r],...)}}}}}
+      
+      if (all.equal(twod, c("x", "z"))==TRUE){
+        
+        plot(LIE[[i]]$X[1], LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=zlim1, main=main1, ylab=zlab1, xlab=xlab1,...)
+        r<-0
+        for (k in 1:nrow(LIE[[i]])){
+          if(LIE[[i]]$Bran[k]=="true"){
+            r<-r+1
+            a<-LIE[[i]]$Prec[k]
+            b<-LIE[[i]]$Date[k]
+            if (a!=0) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Z[k], col=colors[r],...)}
+            m<-LIE[[i]]$Suiv[k]
+            if (m!=0){
+              while (LIE[[i]]$Apic[m]=="false"){
+                a<-LIE[[i]]$Prec[m]
+                b<-LIE[[i]]$Date[m]
+                segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r],...)
+                m<-LIE[[i]]$Suiv[m]}
+              if (LIE[[i]]$Apic[m]=="true"){
+                a<-LIE[[i]]$Prec[m]
+                b<-LIE[[i]]$Date[m]
+                segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r],...)}}}}}
+      
+      if (all.equal(twod, c("y", "z"))==TRUE){
+        
+        plot(LIE[[i]]$Z[1], LIE[[i]]$Y[1], type="n", xlim=zlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=zlab1,...)
+        r<-0
+        for (k in 1:nrow(LIE[[i]])){
+          if(LIE[[i]]$Bran[k]=="true"){
+            r<-r+1
+            a<-LIE[[i]]$Prec[k]
+            b<-LIE[[i]]$Date[k]
+            if (a!=0) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[k],y1=LIE[[i]]$Y[k], col=colors[r],...)}
+            m<-LIE[[i]]$Suiv[k]
+            if (m!=0){
+              while (LIE[[i]]$Apic[m]=="false"){
+                a<-LIE[[i]]$Prec[m]
+                b<-LIE[[i]]$Date[m]
+                segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r],...)
+                m<-LIE[[i]]$Suiv[m]}
+              if (LIE[[i]]$Apic[m]=="true"){
+                a<-LIE[[i]]$Prec[m]
+                b<-LIE[[i]]$Date[m]
+                segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r],...)}}}}}}}}}
   
   names(rac)<-filenameslie
   names(tip)<-filenameslie

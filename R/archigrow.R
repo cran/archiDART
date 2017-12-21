@@ -1,4 +1,4 @@
-archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, unitlength="px", rsml.date="age", rsml.connect=TRUE, plot=TRUE, export.colors=FALSE, unittime=NULL, unitangle="d", rotation=0, numdate=NULL, finalscale=NULL, coldyn=NULL, GRscale=NULL, main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, xlim=NULL, ylim=NULL, zlim=NULL, ...){
+archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, unitlength="px", rsml.date="age", rsml.connect=TRUE, plot=TRUE, twod=NULL, export.colors=FALSE, unittime=NULL, unitangle="d", rotation=0, numdate=NULL, finalscale=NULL, coldyn=NULL, GRscale=NULL, main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, xlim=NULL, ylim=NULL, zlim=NULL, ...){
   
   # Errors interception
   
@@ -33,6 +33,8 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
   
   if (mode(export.colors)!="logical"){stop("mode(export.colors) must be logical")}
   
+  if (plot==FALSE & export.colors==TRUE){stop("If plot=FALSE, colors will not be exported")}
+  
   if (plot==TRUE & is.null(coldyn)==TRUE){stop("If plot=TRUE, coldyn must be specified")}
   
   if (is.null(unittime)==FALSE) {if (mode(unittime)!="character"){stop("mode(unittime) must be character")}}
@@ -57,6 +59,12 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
     if (mode(GRscale)!="numeric") {stop("mode(GRscale) must be numeric")}
     if (length(GRscale)!=2|diff(GRscale)==0){stop("length(GRscale) must be equal to 2: c(min, max)")}
     if (GRscale[1]<0|GRscale[2]<0){stop("GRscale must be a vector of positive values")}}
+  
+  if (is.null(twod)==FALSE){
+    if (mode(twod)!="character"){stop("mode(twod) must be character")}
+    if (length(twod)!=2){stop("twod must be a vector of 2 character elements")}
+    twod<-sort(twod)
+    if (all.equal(twod, c("x", "y"))==TRUE|all.equal(twod, c("x", "z"))==TRUE|all.equal(twod, c("y", "z"))==TRUE) {} else {stop("twod must be c(x,y), c(x,z), or c(y,z)")}}
   
   # Reading of DART and rsml files
   
@@ -95,6 +103,11 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
     
     LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE)
     
+    #Unit conversion DART files
+    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+    if (unitlength=="cm") {cunit<-(cm(1)/res)}
+    if (unitlength=="px") {cunit<-1}
+    
    if (length(TIME)==1) {
      age<-list()
       for (i in 1:length(LIE)) {
@@ -116,11 +129,13 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
       TIME<-list()
       age<-list()
       res1<-c()
+      unitlength1<-c()
       unittime1<-c()
       filenameslie<-c()
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=rsml.connect) # Read RSML files
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution), length(RSML[[i]]$lie)))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         unittime1<-append(unittime1, rep(as.character(RSML[[i]]$time), length(RSML[[i]]$lie)))
         LIE<-append(LIE, RSML[[i]]$lie)
         TIME<-append(TIME, RSML[[i]]$tps)
@@ -134,7 +149,38 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
           num<-c(1:length1)
           filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}
+          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion rsml
+      
+      cunit1<-vector(length=length(res1))
+      
+      for (i in 1:length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenameslie[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenameslie[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}
     
     else { # DART and RSML files
       
@@ -143,6 +189,7 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
       LIE<-lapply(paste(path.lie, "/", filenames.lie, sep=""), read.table, header=TRUE) # read LIE files
       
       res1<-rep(res, length(filenames.lie))
+      unitlength1<-rep(unitlength, length(filenames.lie))
       unittime1<-rep(unittime, length(filenames.lie))
       
       if (length(TIME)==1) {
@@ -163,6 +210,7 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
       
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution), length(RSML[[i]]$lie)))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         unittime1<-append(unittime1, rep(as.character(RSML[[i]]$time), length(RSML[[i]]$lie)))
         LIE<-append(LIE, RSML[[i]]$lie)
         length1<-length(RSML[[i]]$lie)
@@ -175,7 +223,41 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
           num<-c(1:length1)
           filenameslie[(length(filenameslie)+1):(length(filenameslie)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}}}
+          filenameslie[(length(filenameslie)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion DART and RSML
+      cunit1<-vector(length=length(res1))
+      
+      if (unitlength=="mm") {cunit1[1:length(filenames.lie)]<-(10*cm(1)/res)}
+      if (unitlength=="cm") {cunit1[1:length(filenames.lie)]<-cm(1)/res}
+      if (unitlength=="px") {cunit1[1:length(filenames.lie)]<-1}
+      
+      for (i in (length(filenames.lie)+1):length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenameslie[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenameslie[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}}
   
   # Unit conversion and rotation
   
@@ -190,11 +272,7 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
   
   for (i in 1:length(LIE)){
     
-    if (is.null(inputrsml)==FALSE){res<-res1[i]}
-    
-    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-    if (unitlength=="cm") {cunit<-(cm(1)/res)}
-    if (unitlength=="px") {cunit<-1}
+    if (is.null(inputrsml)==FALSE){cunit<-cunit1[i]}
     
     if (!("Z" %in% colnames(LIE[[i]]))){
       LIE[[i]]$X<-LIE[[i]]$X*cunit
@@ -355,6 +433,8 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
     
     growthrate[is.na(growthrate)]<-0
 
+    if (plot==TRUE){
+      
       if (is.null(GRscale)==TRUE) {
         maxi<-matrix(max(growthrate), nrow=nrow(growthrate), ncol=ncol(growthrate))
         mini<-matrix(min(growthrate), nrow=nrow(growthrate), ncol=ncol(growthrate))}
@@ -367,7 +447,7 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
       pal<-colorRamp(coldyn)
       colors<-matrix(nrow=nrow(growthratesd), ncol=ncol(growthratesd))
       for (c in 1:ncol(growthratesd)){
-        colors[,c]<-rgb(pal(growthratesd[,c]), maxColorValue=255)}
+        colors[,c]<-rgb(pal(growthratesd[,c]), maxColorValue=255)}}
     
     # Creating an output list for the growth rate matrices
       
@@ -386,7 +466,7 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
         GR<-data.frame(Num, rootorder, growthrate)
         colnames(GR)<-c("Root", "Ord", paste("Date", t(num), sep=""))}
       
-      if (export.colors==TRUE) {
+      if (plot==TRUE & export.colors==TRUE) {
         colors1<-data.frame(Num, colors)
         colnames(colors1)<-c("Root", paste("Date", t(num), sep=""))}
       
@@ -444,29 +524,99 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
       
       else {
         
+        if (is.null(twod)==TRUE){
+        
+        LIE[[i]]$col<-colors[as.matrix(LIE[[i]][,c("root", "Date")])]
         root<-sum(LIE[[i]]$Suiv==0)
         end<-which(LIE[[i]]$Suiv==0)
         open3d()
         plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
         for (k in 1:root){
           if (k==1) {
-            dataroot<-as.matrix(LIE[[i]][k:end[k],7:9])
-            col1<-LIE[[i]]$Date[2:end[k]]} 
+            dataroot<-as.matrix(LIE[[i]][k:end[k],c(7:9, ncol(LIE[[i]]))])} 
           else {
             if (LIE[[i]]$Prec[end[k-1]+1]!=0){
-              dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])
-              dataroot<-rbind(LIE[[i]][LIE[[i]]$Num==LIE[[i]]$Prec[end[k-1]+1],7:9], dataroot)
-              col1<-LIE[[i]]$Date[(end[k-1]+1):end[k]]}
+              dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])
+              dataroot<-rbind(LIE[[i]][LIE[[i]]$Num==LIE[[i]]$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot)}
             else{
-              dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])
-              col1<-LIE[[i]]$Date[(end[k-1]+2):end[k]]}}
-          for (l in 1:ncol(colors)){col1<-replace(col1, col1==l, colors[k,l])}
-          col1<-c("black", col1)
-          lines3d(dataroot, col=col1, smooth=FALSE, ...)}}}
+              dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])}}
+          
+          lines3d(dataroot[,1:3], col=dataroot[,4], smooth=FALSE, ...)}}
+        
+        else {
+          
+          if (all.equal(twod, c("x", "y"))==TRUE) {
+            
+            plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+            r<-0
+            for (k in 1:nrow(LIE[[i]])){
+              if(LIE[[i]]$Bran[k]=="true"){
+                r<-r+1
+                a<-LIE[[i]]$Prec[k]
+                b<-LIE[[i]]$Date[k]
+                if (a!=0) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=colors[r,b],...)}
+                m<-LIE[[i]]$Suiv[k]
+                if (m!=0){
+                  while (LIE[[i]]$Apic[m]=="false"){
+                    a<-LIE[[i]]$Prec[m]
+                    b<-LIE[[i]]$Date[m]
+                    segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)
+                    m<-LIE[[i]]$Suiv[m]}
+                  if (LIE[[i]]$Apic[m]=="true"){
+                    a<-LIE[[i]]$Prec[m]
+                    b<-LIE[[i]]$Date[m]
+                    segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}}}}}
+          
+          if (all.equal(twod, c("x", "z"))==TRUE){
+            
+            plot(LIE[[i]]$X[1], LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=zlim1, main=main1, ylab=zlab1, xlab=xlab1,...)
+            r<-0
+            for (k in 1:nrow(LIE[[i]])){
+              if(LIE[[i]]$Bran[k]=="true"){
+                r<-r+1
+                a<-LIE[[i]]$Prec[k]
+                b<-LIE[[i]]$Date[k]
+                if (a!=0) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Z[k], col=colors[r,b],...)}
+                m<-LIE[[i]]$Suiv[k]
+                if (m!=0){
+                  while (LIE[[i]]$Apic[m]=="false"){
+                    a<-LIE[[i]]$Prec[m]
+                    b<-LIE[[i]]$Date[m]
+                    segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r,b],...)
+                    m<-LIE[[i]]$Suiv[m]}
+                  if (LIE[[i]]$Apic[m]=="true"){
+                    a<-LIE[[i]]$Prec[m]
+                    b<-LIE[[i]]$Date[m]
+                    segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r,b],...)}}}}}
+          
+          if (all.equal(twod, c("y", "z"))==TRUE){
+            
+            plot(LIE[[i]]$Z[1], LIE[[i]]$Y[1], type="n", xlim=zlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=zlab1,...)
+            r<-0
+            for (k in 1:nrow(LIE[[i]])){
+              if(LIE[[i]]$Bran[k]=="true"){
+                r<-r+1
+                a<-LIE[[i]]$Prec[k]
+                b<-LIE[[i]]$Date[k]
+                if (a!=0) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[k],y1=LIE[[i]]$Y[k], col=colors[r,b],...)}
+                m<-LIE[[i]]$Suiv[k]
+                if (m!=0){
+                  while (LIE[[i]]$Apic[m]=="false"){
+                    a<-LIE[[i]]$Prec[m]
+                    b<-LIE[[i]]$Date[m]
+                    segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)
+                    m<-LIE[[i]]$Suiv[m]}
+                  if (LIE[[i]]$Apic[m]=="true"){
+                    a<-LIE[[i]]$Prec[m]
+                    b<-LIE[[i]]$Date[m]
+                    segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}}}}}}}}
     
     if (is.null(numdate)==FALSE) {
+      
       for (l in 1:length(numdate)){if (numdate[l]>max(LIE[[i]]$Date)){message(paste("Warning: numdate contains a numerical value greater than max(Date) in", filenames.lie[[i]], sep=" "))}}
+      
       if (finalscale==TRUE){
+        
         LIE[[i]]$X<-LIE[[i]]$X-min(LIE[[i]]$X)
         LIE[[i]]$Y<-LIE[[i]]$Y-min(LIE[[i]]$Y)
         if ("Z" %in% colnames(LIE[[i]])) {LIE[[i]]$Z<-LIE[[i]]$Z-min(LIE[[i]]$Z)}
@@ -510,6 +660,9 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
           
           else{
             
+            if (is.null(twod)==TRUE){
+            
+            LIE[[i]]$col<-colors[as.matrix(LIE[[i]][,c("root", "Date")])]
             dataroot1<-LIE[[i]][LIE[[i]]$Date<=numdate[j],]
             root<-sum(dataroot1$Bran=="true")
             if (root>1) {
@@ -521,20 +674,83 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
             plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
             for (k in 1:root){
               if (k==1) {
-                dataroot<-as.matrix(dataroot1[k:end[k],7:9])
-                col1<-dataroot1$Date[2:end[k]]} 
+                dataroot<-as.matrix(dataroot1[k:end[k],c(7:9, ncol(LIE[[i]]))])} 
               else {
                 if (dataroot1$Prec[end[k-1]+1]!=0){
-                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
-                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],7:9], dataroot)
-                  col1<-dataroot1$Date[(end[k-1]+1):end[k]]}
+                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])
+                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot)}
                 else{
-                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
-                  col1<-dataroot1$Date[(end[k-1]+2):end[k]]}}
+                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])}}
+      
+              lines3d(dataroot[,1:3], col=dataroot[,4], smooth=FALSE, ...)}}
+            
+            else {
               
-              for (l in 1:ncol(colors)){col1<-replace(col1, col1==l, colors[k,l])}
-              col1<-c("black", col1)
-              lines3d(dataroot, col=col1, smooth=FALSE, ...)}}}}
+              if (all.equal(twod, c("x", "y"))==TRUE) {
+                
+                plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+                r<-0
+                for (k in 1:nrow(LIE[[i]])){
+                  if(LIE[[i]]$Bran[k]=="true"){
+                    r<-r+1
+                    a<-LIE[[i]]$Prec[k]
+                    b<-LIE[[i]]$Date[k]
+                    if (a!=0 & b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=colors[r,b],...)}
+                    m<-LIE[[i]]$Suiv[k]
+                    if (m!=0){
+                      while (LIE[[i]]$Apic[m]=="false"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}
+                        m<-LIE[[i]]$Suiv[m]}
+                      if (LIE[[i]]$Apic[m]=="true"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}}}}}}
+              
+              if (all.equal(twod, c("x", "z"))==TRUE){
+                
+                plot(LIE[[i]]$X[1], LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=zlim1, main=main1, ylab=zlab1, xlab=xlab1,...)
+                r<-0
+                for (k in 1:nrow(LIE[[i]])){
+                  if(LIE[[i]]$Bran[k]=="true"){
+                    r<-r+1
+                    a<-LIE[[i]]$Prec[k]
+                    b<-LIE[[i]]$Date[k]
+                    if (a!=0 & b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Z[k], col=colors[r,b],...)}
+                    m<-LIE[[i]]$Suiv[k]
+                    if (m!=0){
+                      while (LIE[[i]]$Apic[m]=="false"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r,b],...)}
+                        m<-LIE[[i]]$Suiv[m]}
+                      if (LIE[[i]]$Apic[m]=="true"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r,b],...)}}}}}}
+              
+              if (all.equal(twod, c("y", "z"))==TRUE){
+                
+                plot(LIE[[i]]$Z[1], LIE[[i]]$Y[1], type="n", xlim=zlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=zlab1,...)
+                r<-0
+                for (k in 1:nrow(LIE[[i]])){
+                  if(LIE[[i]]$Bran[k]=="true"){
+                    r<-r+1
+                    a<-LIE[[i]]$Prec[k]
+                    b<-LIE[[i]]$Date[k]
+                    if (a!=0 & b<=numdate[j]) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[k],y1=LIE[[i]]$Y[k], col=colors[r,b],...)}
+                    m<-LIE[[i]]$Suiv[k]
+                    if (m!=0){
+                      while (LIE[[i]]$Apic[m]=="false"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}
+                        m<-LIE[[i]]$Suiv[m]}
+                      if (LIE[[i]]$Apic[m]=="true"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}}}}}}}}}}
       
       if (finalscale==FALSE){
         for (j in 1:length(numdate)){
@@ -591,6 +807,9 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
           
           else {
             
+            if (is.null(twod)==TRUE){
+            
+            LIE[[i]]$col<-colors[as.matrix(LIE[[i]][,c("root", "Date")])]
             dataroot1<-LIE[[i]][LIE[[i]]$Date<=numdate[j],]
             root<-sum(dataroot1$Bran=="true")
             if (root>1) {
@@ -602,19 +821,82 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
             plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
             for (k in 1:root){
               if (k==1) {
-                dataroot<-as.matrix(dataroot1[k:end[k],7:9])
-                col1<-dataroot1$Date[2:end[k]]} 
+                dataroot<-as.matrix(dataroot1[k:end[k],c(7:9, ncol(LIE[[i]]))])} 
               else {
                 if (dataroot1$Prec[end[k-1]+1]!=0){
-                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
-                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],7:9], dataroot)
-                  col1<-dataroot1$Date[(end[k-1]+1):end[k]]}
+                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])
+                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot)}
                 else{
-                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],7:9])
-                  col1<-dataroot1$Date[(end[k-1]+2):end[k]]}}
+                  dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])}}
               
-              for (l in 1:ncol(colors)){col1<-replace(col1, col1==l, colors[k,l])}
-              col1<-c("black", col1)
-              lines3d(dataroot, col=col1, smooth=FALSE, ...)}}}}}}}
+              lines3d(dataroot[,1:3], col=dataroot[,4], smooth=FALSE, ...)}}
+            
+            else {
+              
+              if (all.equal(twod, c("x", "y"))==TRUE) {
+                
+                plot(LIE[[i]]$X[1], LIE[[i]]$Y[1], type="n", xlim=xlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=xlab1,...)
+                r<-0
+                for (k in 1:nrow(LIE[[i]])){
+                  if(LIE[[i]]$Bran[k]=="true"){
+                    r<-r+1
+                    a<-LIE[[i]]$Prec[k]
+                    b<-LIE[[i]]$Date[k]
+                    if (a!=0 & b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Y[k], col=colors[r,b],...)}
+                    m<-LIE[[i]]$Suiv[k]
+                    if (m!=0){
+                      while (LIE[[i]]$Apic[m]=="false"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}
+                        m<-LIE[[i]]$Suiv[m]}
+                      if (LIE[[i]]$Apic[m]=="true"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}}}}}}
+              
+              if (all.equal(twod, c("x", "z"))==TRUE){
+                
+                plot(LIE[[i]]$X[1], LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=zlim1, main=main1, ylab=zlab1, xlab=xlab1,...)
+                r<-0
+                for (k in 1:nrow(LIE[[i]])){
+                  if(LIE[[i]]$Bran[k]=="true"){
+                    r<-r+1
+                    a<-LIE[[i]]$Prec[k]
+                    b<-LIE[[i]]$Date[k]
+                    if (a!=0 & b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[k],y1=LIE[[i]]$Z[k], col=colors[r,b],...)}
+                    m<-LIE[[i]]$Suiv[k]
+                    if (m!=0){
+                      while (LIE[[i]]$Apic[m]=="false"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r,b],...)}
+                        m<-LIE[[i]]$Suiv[m]}
+                      if (LIE[[i]]$Apic[m]=="true"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$X[a],y0=LIE[[i]]$Z[a],x1=LIE[[i]]$X[m],y1=LIE[[i]]$Z[m], col=colors[r,b],...)}}}}}}
+              
+              if (all.equal(twod, c("y", "z"))==TRUE){
+                
+                plot(LIE[[i]]$Z[1], LIE[[i]]$Y[1], type="n", xlim=zlim1, ylim=ylim1, main=main1, ylab=ylab1, xlab=zlab1,...)
+                r<-0
+                for (k in 1:nrow(LIE[[i]])){
+                  if(LIE[[i]]$Bran[k]=="true"){
+                    r<-r+1
+                    a<-LIE[[i]]$Prec[k]
+                    b<-LIE[[i]]$Date[k]
+                    if (a!=0 & b<=numdate[j]) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[k],y1=LIE[[i]]$Y[k], col=colors[r,b],...)}
+                    m<-LIE[[i]]$Suiv[k]
+                    if (m!=0){
+                      while (LIE[[i]]$Apic[m]=="false"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}
+                        m<-LIE[[i]]$Suiv[m]}
+                      if (LIE[[i]]$Apic[m]=="true"){
+                        a<-LIE[[i]]$Prec[m]
+                        b<-LIE[[i]]$Date[m]
+                        if (b<=numdate[j]) {segments(x0=LIE[[i]]$Z[a],y0=LIE[[i]]$Y[a],x1=LIE[[i]]$Z[m],y1=LIE[[i]]$Y[m], col=colors[r,b],...)}}}}}}}}}}}}}
         
           return(GRlist)}

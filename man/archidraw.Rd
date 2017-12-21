@@ -5,8 +5,8 @@
 \usage{
 archidraw(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", rsml.connect=FALSE,
           rsml.date=NULL, unitangle="d", rotation=0, numdate=NULL, finalscale=NULL,
-          coldate=par("col"), main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, xlim=NULL,
-          ylim=NULL, zlim=NULL,...)
+          coldate=par("col"), twod=NULL, main=NULL, xlab=NULL, ylab=NULL, zlab=NULL, 
+          xlim=NULL, ylim=NULL, zlim=NULL,...)
 }
 \arguments{
   \item{inputlie}{A character string specifying the path to the folder containing the lie files created by DART. This argument could be the same as \code{inputrsml}.}
@@ -20,6 +20,7 @@ archidraw(inputlie=NULL, inputrsml=NULL, res=NULL, unitlength="px", rsml.connect
   \item{numdate}{A numeric value or a vector of numeric values specifying the identification number of all observation dates at which the root system(s) must be plotted (see details).}
   \item{finalscale}{A logical value that must be specified when \code{is.null(numdate)=FALSE}. If \code{TRUE}, the root system architecture at the selected observation dates is plotted with the same axis scales to that used to draw the root system architecture at the last observation date. If \code{FALSE}, the root system architecture at each observation date is plotted using different axis ranges of coordinates (\code{xlim} and \code{ylim}).}
   \item{coldate}{A vector specifying the color(s) that must be used to plot the root system(s) at the selected observation dates (see details).}
+  \item{twod}{When RSML files contain 3D RSA data, should the root systems be plotted in 2D? This argument can be NULL (3D plots) or a character vector giving the name of the axes to plot (can be c(\dQuote{x}, \dQuote{y}), c(\dQuote{x}, \dQuote{z}), or c(\dQuote{y}, \dQuote{z})).}
   \item{main}{A character string giving a main title for the plot. When \code{main=NULL}, the default title for each plot is the name of the corresponding lie/RSML file.}
   \item{xlab}{A character string giving a label for the X axis. When \code{xlab=NULL}, the default label for the X axis is X (\code{unitlength}).}
   \item{ylab}{A character string giving a label for the Y axis. When \code{ylab=NULL}, the default label for the Y axis is Y (\code{unitlength}).}
@@ -78,7 +79,9 @@ coldate=rainbow(31), lwd=2,las=1, bty="l", asp=1, xaxp=c(0,30,3), yaxp=c(0,90,9)
 
 ## Plot RSA at the last observation date
 ## One color for each observation date
-archidraw(inputrsml=path, unitlength="cm", rsml.date="age", coldate=rainbow(16), lwd=2)
+## 2D plot
+archidraw(inputrsml=path, unitlength="cm", rsml.date="age", coldate=rainbow(15), lwd=2,
+twod=c("x", "y"), asp=1, las=1, bty="l")
           
 ##---------------------
 ## DART and RSML files

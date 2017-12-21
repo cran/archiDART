@@ -64,7 +64,12 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
       colnames(DATA[[i]])[3]<-"Ord"
       colnames(DATA[[i]])[4]<-"DBase"
       colnames(DATA[[i]])[5]<-"DApp"
-      for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}}
+      for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
+    
+    #Unit conversion DART files
+    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+    if (unitlength=="cm") {cunit<-(cm(1)/res)}
+    if (unitlength=="px") {cunit<-1}}
   
   else {
     
@@ -72,10 +77,12 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
       
       DATA<-list()
       res1<-c()
+      unitlength1<-c()
       filenamesrac<-c()
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=NULL, connect=rsml.connect)
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
         DATA<-append(DATA, RSML[[i]]$rac)
         length1<-length(RSML[[i]]$rac)
@@ -83,7 +90,37 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
           num<-c(1:length1)
           filenamesrac[(length(filenamesrac)+1):(length(filenamesrac)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}}
+          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion RSML
+      cunit1<-vector(length=length(res1))
+      
+      for (i in 1:length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}
     
     else { # DART and rsml files
       
@@ -99,11 +136,13 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
         for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
       
       res1<-rep(res, length(filenames.rac))
+      unitlength1<-rep(unitlength, length(filenames.rac))
       
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=NULL, connect=rsml.connect)
       
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution, length(RSML[[i]]$lie))))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         for (j in 1:length(RSML[[i]]$rac)){colnames(RSML[[i]]$rac[[j]])[6]<-"Lengths1"}
         DATA<-append(DATA, RSML[[i]]$rac)
         length1<-length(RSML[[i]]$rac)
@@ -111,15 +150,46 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
           num<-c(1:length1)
           filenamesrac[(length(filenamesrac)+1):(length(filenamesrac)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}}}
+          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion DART and RSML
+      cunit1<-vector(length=length(res1))
+      
+      if (unitlength=="mm") {cunit1[1:length(filenames.rac)]<-(10*cm(1)/res)}
+      if (unitlength=="cm") {cunit1[1:length(filenames.rac)]<-cm(1)/res}
+      if (unitlength=="px") {cunit1[1:length(filenames.rac)]<-1}
+      
+      for (i in (length(filenames.rac)+1):length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}}
  
   # Unit conversion
   
   for (i in 1:length(DATA)){
-    if (is.null(inputrsml)==FALSE){res<-res1[i]}
-    if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-    if (unitlength=="cm") {cunit<-(cm(1)/res)}
-    if (unitlength=="px") {cunit<-1}
+    if (is.null(inputrsml)==FALSE){cunit<-cunit1[i]}
     DATA[[i]]$DBase<-DATA[[i]]$DBase*cunit
     for (j in 6:ncol(DATA[[i]])) {DATA[[i]][,j]<-DATA[[i]][,j]*cunit}}
     
@@ -199,7 +269,7 @@ latdist<-function(inputrac=NULL, inputrsml=NULL, output=c("lrd","dtp"), res=NULL
   
     else {
       
-      # Calculating lateral root length and density distributions alons each mother root with interpolation
+      # Calculating lateral root length and density distributions along each mother root with interpolation
     
       for (i in 1:length(DATA)){
         

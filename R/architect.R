@@ -1,4 +1,34 @@
-architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", rsml.date=NULL, rsml.connect=FALSE){
+architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px", rsml.date=NULL, rsml.connect=FALSE, vertical3d="y", chull=c("x", "y"), fitter=FALSE){
+  
+  # Find out what kind of data input we have
+  
+  if (is.null(inputrac)==FALSE){
+    if ("character" %in% class(inputrac) | "dartToTable" %in% class(inputrac)){} else {stop("inputrac must be a character string or a dartToTable object")}}
+  
+  if (is.null(inputrsml)==FALSE){
+    if ("character" %in% class(inputrsml) | "rsmlToTable" %in% class(inputrsml)){} else {stop("inputrsml must be a character string or a rsmlToTable object")}}
+  
+  if (is.null(inputrac)==TRUE & is.null(inputrsml)==TRUE){algo<-"rawfiles"}
+  if (is.null(inputrac)==TRUE & "rsmlToTable" %in% class(inputrsml)){algo<-"tables"}
+  if (is.null(inputrac)==TRUE & mode(inputrsml)=="character"){algo<-"rawfiles"}
+  
+  if ("dartToTable" %in% class(inputrac) & is.null(inputrsml)==TRUE){algo<-"tables"}
+  if ("dartToTable" %in% class(inputrac) & "rsmlToTable" %in% class(inputrsml)){algo<-"tables"}
+  if ("dartToTable" %in% class(inputrac) & mode(inputrsml)=="character"){stop("inputrsml must be a rsmlToTable object")}
+  
+  if (mode(inputrac)=="character" & is.null(inputrsml)==TRUE){algo<-"rawfiles"}
+  if (mode(inputrac)=="character" & "rsmlToTable" %in% class(inputrsml)){stop("inputrac must be a dartToTable object")}
+  if (mode(inputrac)=="character" & mode(inputrsml)=="character"){algo<-"rawfiles"}
+  
+##Two possible algorithms for architect
+##rawfiles if raw DART and RSML files have to be loaded (the raw files are stored in a folder)
+##tables if input data are stored in rsmlToTable or dartToTable objects
+  
+#################
+#First algorithm
+#################
+  
+if (algo=="rawfiles"){
   
   # Errors interception
   
@@ -71,6 +101,11 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
         colnames(DATA[[i]])[5]<-"DApp"
         for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
       
+      #Unit conversion DART files
+      if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
+      if (unitlength=="cm") {cunit<-(cm(1)/res)}
+      if (unitlength=="px") {cunit<-1}
+      
       if (length(TIME)==1) {
         age<-list()
         obstot<-0
@@ -96,11 +131,13 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
       DATA<-list()
       age<-list()
       res1<-c()
+      unitlength1<-c()
       filenamesrac<-c()
       RSML <- lapply(paste(path.rsml, "/", filenames.rsml, sep=""), rsmlToDART, final.date=rsml.date, connect=rsml.connect) # Read RSML files
       obstot<-0
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution), length(RSML[[i]]$lie)))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         DATA<-append(DATA, RSML[[i]]$rac)
         length1<-length(RSML[[i]]$rac)
         
@@ -113,7 +150,37 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
           num<-c(1:length1)
           filenamesrac[(length(filenamesrac)+1):(length(filenamesrac)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}}
+          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion RSML
+      cunit1<-vector(length=length(res1))
+      
+      for (i in 1:length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit1[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}
     
     else { # DART and RSML files
       
@@ -130,6 +197,7 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
         for (j in 6:ncol(DATA[[i]])-5) {colnames(DATA[[i]])[j+5]<-paste("Lengths", j, sep="")}}
       
       res1<-rep(res, length(filenames.rac))
+      unitlength1<-rep(unitlength, length(filenames.rac))
       
       if (length(TIME)==1) {
         age<-list()
@@ -153,6 +221,7 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
       
       for (i in 1:length(RSML)){
         res1<-append(res1, rep(as.numeric(RSML[[i]]$resolution), length(RSML[[i]]$lie)))
+        unitlength1<-append(unitlength1, rep(as.character(RSML[[i]]$length), length(RSML[[i]]$lie)))
         DATA<-append(DATA, RSML[[i]]$rac)
         length1<-length(RSML[[i]]$rac)
         
@@ -165,7 +234,41 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
           num<-c(1:length1)
           filenamesrac[(length(filenamesrac)+1):(length(filenamesrac)+length1)]<-paste(rep(filenamesrsml[i], length.out=length1), num, sep="")}
         if (length1==1){
-          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}}}
+          filenamesrac[(length(filenamesrac)+1)]<-filenamesrsml[i]}}
+      
+      #Unit conversion DART and RSML
+      cunit1<-vector(length=length(res1))
+      
+      if (unitlength=="mm") {cunit1[1:length(filenames.rac)]<-(10*cm(1)/res)}
+      if (unitlength=="cm") {cunit1[1:length(filenames.rac)]<-cm(1)/res}
+      if (unitlength=="px") {cunit1[1:length(filenames.rac)]<-1}
+      
+      for (i in (length(filenames.rac)+1):length(res1)){
+        
+        if (unitlength=="cm"){
+          
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-100/res1[i]}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]/10}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/10000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/10000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)}}
+        
+        if (unitlength=="mm"){
+          if (unitlength1[i]=="pixel") {
+            cunit[i]<-1
+            message(paste("Unit in ", filenamesrac[i], " is pixel. Unitlength not used and results expressed in pixels", sep=""))}
+          if (unitlength1[i]=="m") {cunit1[i]<-1/res1[i]*1000}
+          if (unitlength1[i]=="cm") {cunit1[i]<-1/res1[i]*10}
+          if (unitlength1[i]=="mm") {cunit1[i]<-1/res1[i]}
+          if (unitlength1[i]=="um") {cunit1[i]<-1/res1[i]/1000}
+          if (unitlength1[i]=="nm") {cunit1[i]<-1/res1[i]/1000000}
+          if (unitlength1[i]=="inch") {cunit1[i]<-1/res1[i]*cm(1)*10}}
+        
+        if (unitlength=="px"){cunit1[i]<-1}}}}
   
   # Creating vectors and matrices for root architecture parameters calculation
   
@@ -185,7 +288,7 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
   k<-0
   maxord<-max(sapply(DATA, function(x){max(x[[3]])}))
   if (maxord>1) {latroot<-matrix(ncol=4*(maxord-1), nrow=obstot)}
-  
+
   for(i in 1:length(DATA)){
     
     LastFirstOrderRootLength<-DATA[[i]][[ncol(DATA[[i]])]][DATA[[i]]$Ord==1]
@@ -206,11 +309,7 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
       
       # Unit conversion
       
-      if (is.null(inputrsml)==FALSE){res<-res1[i]}
-      
-      if (unitlength=="mm") {cunit<-(10*cm(1)/res)}
-      if (unitlength=="cm") {cunit<-(cm(1)/res)}
-      if (unitlength=="px") {cunit<-1}	
+      if (is.null(inputrsml)==FALSE){cunit<-cunit1[i]}
       
       # Total root length
       
@@ -251,14 +350,13 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
         if (l<=max(DATA[[i]]$Ord)-1) {latroot[k,(l+(maxord-1))]<-sum(data.split[[l+1]])*cunit} else {latroot[k,(l+(maxord-1))]<-0}
         if (latroot[k,l]==0){latroot[k,(l+2*(maxord-1))]<-0} else {latroot[k,(l+2*(maxord-1))]<-latroot[k,(l+(maxord-1))]/latroot[k,l]}
         if (t==1) {latroot[k,(l+3*(maxord-1))]<-latroot[k,(l+(maxord-1))]/age[[i]][t]} else {latroot[k,(l+3*(maxord-1))]<-(latroot[k,(l+(maxord-1))]-latroot[k-1,(l+(maxord-1))])/(age[[i]][t]-age[[i]][t-1])}}}
-      
+
       # Density of secondary roots on the first-order root
       
       if (FirstOrderRootLength[k]==0|maxord==1) {LateralRootDensity[k]<-0} else {LateralRootDensity[k]<-latroot[k,1]/FirstOrderRootLength[k]}}}	
   
-  # Summarying results in a data frame
+  # Summary results in a data frame
   
-
   if (maxord>1) {outputresults<-data.frame(FileNames, Time, TotalRootLength, GrowthRateTotalRoot, FirstOrderRootLength, GrowthRateFirstOrderRoot, FirstOrderRootNumber, TotalLateralRootNumber, TotalLateralRootLength, latroot, LateralRootDensity)}
   else {outputresults<-data.frame(FileNames, Time, TotalRootLength, GrowthRateTotalRoot, FirstOrderRootLength, GrowthRateFirstOrderRoot, FirstOrderRootNumber, TotalLateralRootNumber, TotalLateralRootLength, LateralRootDensity)}
   
@@ -278,3 +376,449 @@ architect<-function(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unit
   else {colnames(outputresults)<-c("FileName", "Time", "TRL", "GRTR", "L1R", "GR1R", "TN1R", "TNLR", "TLRL", "D2LR")}
   
   return(outputresults)}
+
+##################
+#Second algorithm
+##################
+  
+  
+if (algo=="tables"){
+  
+  if (is.null(inputrsml)==FALSE & fitter==TRUE){
+    
+    if ("geodesic" %in% colnames(inputrsml)) {} else {stop("No connection found between parent and daughter roots. Consider using rsml.connect=TRUE in rsmlToTable.")}}
+
+  if (vertical3d=="x"|vertical3d=="y"|vertical3d=="z") {} else {stop("vertical3d must be x, y, or z")}
+  
+  if (mode(fitter)!="logical"){stop("fitter must be logical")}
+  
+  if (mode(chull)!="character"){stop("mode(chull) must be character")}
+  if (length(chull)!=2){stop("chull must be a vector of 2 character elements")}
+  chull<-sort(chull)
+  if (all.equal(chull, c("x", "y"))==TRUE|all.equal(chull, c("x", "z"))==TRUE|all.equal(chull, c("y", "z"))==TRUE) {} else {stop("chull must be c(x,y), c(x,z), or c(y,z)")}
+
+  if (is.null(inputrac)==TRUE & is.null(inputrsml)==FALSE) {maxord<-max(inputrsml$order)}
+  if (is.null(inputrac)==FALSE & is.null(inputrsml)==TRUE) {maxord<-max(inputrac$order)}
+  if (is.null(inputrac)==FALSE & is.null(inputrsml)==FALSE) {maxord<-max(c(inputrac$order, inputrsml$order))}
+  
+  #Processing DART files
+  
+  if (is.null(inputrac)==FALSE){
+    
+    n<-length(unique(paste(inputrac$file, inputrac$time, sep="")))
+    
+    if (fitter==TRUE){datadart<-data.frame(FileName=rep(NA, n), Time=rep(NA, n), TRL=rep(NA, n), GRTR=rep(NA, n), L1R=rep(NA, n), GR1R=rep(NA, n), TN1R=rep(NA, n), TNLR=rep(NA, n), TLRL=rep(NA, n), D2LR=rep(NA, n), Height=rep(NA, n), Width=rep(NA, n), Convexhull=rep(NA, n), Magnitude=rep(NA, n), Altitude=rep(NA, n), ExtPathLength=rep(NA, n))}
+    
+    else {datadart<-data.frame(FileName=rep(NA, n), Time=rep(NA, n), TRL=rep(NA, n), GRTR=rep(NA, n), L1R=rep(NA, n), GR1R=rep(NA, n), TN1R=rep(NA, n), TNLR=rep(NA, n), TLRL=rep(NA, n), D2LR=rep(NA, n), Height=rep(NA, n), Width=rep(NA, n), Convexhull=rep(NA, n))}
+    
+    if (maxord>1){latroot<-matrix(ncol=4*(maxord-1), nrow=n)}
+    
+    diameter<-matrix(ncol=maxord+1, nrow=n)
+    surface<-matrix(ncol=maxord+1, nrow=n)
+    volume<-matrix(ncol=maxord+1, nrow=n)
+    
+    files<-unique(inputrac$file)
+    
+    k<-0
+    
+    for (i in 1:length(files)){
+      
+      dates<-sort(unique(inputrac$time[inputrac$file==files[i]]))
+      
+      for (t in 1:length(dates)){
+        
+        xt<-inputrac[inputrac$file==files[i],]
+        
+        k<-k+1
+        
+        #File name
+        datadart$FileName[k]<-xt$file[1]
+        
+        #Time
+        datadart$Time[k]<-dates[t]
+        
+        #TRL (total root length)
+        datadart$TRL[k]<-sum(xt$length[xt$time<=dates[t]])
+        
+        #GRTR (growth rate of the root system)
+        GR<-aggregate(xt$growth, by=list(root=xt$root, order=xt$order, time=xt$time), max)
+        datadart$GRTR[k]<-sum(GR$x[GR$time==dates[t]])
+
+        #L1R (total first-order root length)
+        datadart$L1R[k]<-sum(xt$length[xt$time<=dates[t] & xt$order==1])
+        
+        #GR1R (growth rate of first-order roots)
+        datadart$GR1R[k]<-sum(GR$x[GR$time==dates[t] & GR$order==1])
+        
+        #TN1R (number of first-order roots)
+        datadart$TN1R[k]<-length(unique(xt$root[xt$time<=dates[t] & xt$order==1]))
+        
+        #TNLR (number of lateral roots)
+        datadart$TNLR[k]<-length(unique(xt$root[xt$time<=dates[t] & xt$order>1]))
+        
+        #TLRL (total lateral root length)
+        datadart$TLRL[k]<-sum(xt$length[xt$time<=dates[t] & xt$order>1])
+        
+        #D2LR (density of second-order roots on the first-order root)
+        datadart$D2LR[k]<-length(unique(xt$root[xt$time<=dates[t] & xt$order==2]))/datadart$L1R[k]
+          
+        #Latroot (number, length, mean length, growth rate)
+        
+        if (maxord>1){
+          
+          for (l in 1:(maxord-1)){
+            
+            latroot[k, l]<-length(unique(xt$root[xt$time<=dates[t] & xt$order==(l+1)])) #Number of lateral roots
+            latroot[k, l+(maxord-1)]<-sum(xt$length[xt$time<=dates[t] & xt$order==(l+1)]) #Length of lateral roots
+            if (latroot[k,l]==0) {latroot[k, l+2*(maxord-1)]<-0} else {latroot[k, l+2*(maxord-1)]<-latroot[k, l+(maxord-1)]/latroot[k, l]} #Mean lateral root length
+            latroot[k, l+3*(maxord-1)]<-sum(GR$x[GR$time==dates[t] & GR$order==(l+1)])}}
+    
+        #Height
+        datadart$Height[k]<-abs(max(xt$y2[xt$time<=dates[t]])-min(xt$y1[xt$time<=dates[t]]))
+
+        #Width
+          
+        datadart$Width[k]<-abs(max(xt$x2[xt$time<=dates[t]])-min(xt$x2[xt$time<=dates[t]]))
+        
+        #Convex hull
+        
+        x<-c(xt$x1[xt$time<=dates[t]], xt$x2[xt$time<=dates[t]])
+        y<-c(xt$y1[xt$time<=dates[t]], xt$y2[xt$time<=dates[t]])
+        root.coords<-cbind(x,y)
+        boxhull<-chull(x=x, y=y)
+        
+        if (length(boxhull)<3){datadart$Convexhull[k]<-0}
+        else {
+        boxhull<-c(boxhull, boxhull[1])
+        boxhull.coords<-root.coords[boxhull,]
+        chull.poly<-Polygon(boxhull.coords, hole=F)
+        datadart$Convexhull[k]<-chull.poly@area}
+
+        #Fitter topological indices
+        
+        if (fitter==TRUE){
+          
+        xt<-xt[xt$time<=dates[t],]
+        apex<-aggregate(xt$blength, by=list(root=xt$root), max)
+        apicindex<-as.vector(apply(apex, 1, function(x){which(xt$root==x["root"] & xt$blength==x["x"])}))
+        xt$apic[apicindex]<-"true"
+        branindex<-which(xt$bran=="true")
+        
+        #Magnitude
+        datadart$Magnitude[k]<-sum(xt$bran=="true")
+        
+        #Altitude and external path length
+        xt$pathlength<-rep(1, nrow(xt))
+        
+        if (nrow(xt)>1){
+        
+          for (l in 1:length(branindex)){ #For each root
+            
+            root<-xt$root[branindex[l]]
+            
+            testbran<-which(xt$x1==xt$x2[branindex[l]] & xt$y1==xt$y2[branindex[l]] & xt$z1==xt$z2[branindex[l]]) #Is it a crossing?
+            if (length(testbran)>1) {testbran<-testbran[which(xt$root[testbran]==root | xt$parentroot[testbran]==root)]} #Select segments based on root ID and parentroot ID
+            
+            if (length(testbran)==0) {} else {
+              
+              if (length(testbran)>=2) {
+                xt$pathlength[testbran]<-xt$pathlength[branindex[l]]+1
+                index<-which(xt$bran[testbran]=="false")
+                suiv<-testbran[index]}
+              else {
+                xt$pathlength[testbran]<-xt$pathlength[branindex[l]]
+                suiv<-testbran}
+            
+            while(xt$apic[suiv]=="false"){
+              
+              testbran<-which(xt$x1==xt$x2[suiv] & xt$y1==xt$y2[suiv] & xt$z1==xt$z2[suiv]) #Is it a crossing?
+              if (length(testbran)>1) {testbran<-testbran[which(xt$root[testbran]==root | xt$parentroot[testbran]==root)]} #Select segments based on root ID and parentroot ID
+              
+              if (length(testbran)>=2) {
+                xt$pathlength[testbran]<-xt$pathlength[suiv]+1
+                index<-which(xt$bran[testbran]=="false")
+                suiv<-testbran[index]}
+              else {
+                xt$pathlength[testbran]<-xt$pathlength[suiv]
+                suiv<-testbran}}}}
+        
+        datadart$Altitude[k]<-max(xt$pathlength)
+        datadart$ExtPathLength[k]<-sum(xt$pathlength[xt$apic=="true"])}
+        
+        else{
+          
+          datadart$Altitude[k]<-1
+          datadart$ExtPathLength[k]<-1}}}}
+    
+        # Results in a dataframe
+        
+        diameter<-as.data.frame(diameter)
+        colnames(diameter)<-c(paste(rep("MD", maxord), c(1:maxord), sep=""), "MDLR")
+        
+        surface<-as.data.frame(surface)
+        colnames(surface)<-c(paste(rep("S", maxord), c(1:maxord), sep=""), "Stot")
+        
+        volume<-as.data.frame(volume)
+        colnames(volume)<-c(paste(rep("V", maxord), c(1:maxord), sep=""), "Vtot")
+        
+        if (maxord>1){
+          
+          latroot<-as.data.frame(latroot)
+        
+        for (l in 1:(maxord-1)){
+          colnames(latroot)[l]<-paste("N", l+1, "LR", sep="")
+          colnames(latroot)[l+(maxord-1)]<-paste("L", l+1, "LR", sep="")
+          colnames(latroot)[l+2*(maxord-1)]<-paste("ML", l+1, "LR", sep="")
+          colnames(latroot)[l+3*(maxord-1)]<-paste("GR", l+1, "L", sep="")}
+        
+        if (fitter==TRUE){datadart<-data.frame(datadart[,1:9], as.data.frame(latroot), datadart[,10:16], as.data.frame(diameter), as.data.frame(surface), as.data.frame(volume))}  
+            
+        else {datadart<-data.frame(datadart[,1:9], as.data.frame(latroot), datadart[,10:13], as.data.frame(diameter), as.data.frame(surface), as.data.frame(volume))}}}
+  
+  #Processing RSML files
+  
+  if (is.null(inputrsml)==FALSE){
+    
+    inputrsml$diameter3<-inputrsml$diameter1
+    inputrsml$diameter3[inputrsml$apic=="true"]<-inputrsml$diameter1[inputrsml$apic=="true"]+inputrsml$diameter2[inputrsml$apic=="true"]
+    
+    n<-length(unique(paste(inputrsml$file, inputrsml$plant, inputrsml$time, sep="")))
+    
+    if (fitter==TRUE){datarsml<-data.frame(FileName=rep(NA, n), Time=rep(NA, n), TRL=rep(NA, n), GRTR=rep(NA, n), L1R=rep(NA, n), GR1R=rep(NA, n), TN1R=rep(NA, n), TNLR=rep(NA, n), TLRL=rep(NA, n), D2LR=rep(NA, n), Height=rep(NA, n), Width=rep(NA, n), Convexhull=rep(NA, n), Magnitude=rep(NA, n), Altitude=rep(NA, n), ExtPathLength=rep(NA, n))}
+    
+    else {datarsml<-data.frame(FileName=rep(NA, n), Time=rep(NA, n), TRL=rep(NA, n), GRTR=rep(NA, n), L1R=rep(NA, n), GR1R=rep(NA, n), TN1R=rep(NA, n), TNLR=rep(NA, n), TLRL=rep(NA, n), D2LR=rep(NA, n), Height=rep(NA, n), Width=rep(NA, n), Convexhull=rep(NA, n))}
+    
+    if (maxord>1){latroot<-matrix(ncol=4*(maxord-1), nrow=n)}
+    
+    diameter<-matrix(ncol=maxord+1, nrow=n)
+    surface<-matrix(ncol=maxord+1, nrow=n)
+    volume<-matrix(ncol=maxord+1, nrow=n)
+    
+    files<-unique(inputrsml$file)
+    
+    k<-0
+    
+    for (i in 1:length(files)){
+      
+      plants<-unique(inputrsml$plant[inputrsml$file==files[i]])
+      
+      for (j in 1:length(plants)){
+      
+      dates<-sort(unique(inputrsml$time[inputrsml$file==files[i] & inputrsml$plant==plants[j]]))
+      
+      for (t in 1:length(dates)){
+        
+        xt<-inputrsml[inputrsml$file==files[i] & inputrsml$plant==plants[j],] #x is a subset of the rsmlToTable object
+        
+        k<-k+1
+        
+        #File name
+        datarsml$FileName[k]<-paste(xt$file[1], xt$plant[1], sep="_")
+        
+        #Time
+        datarsml$Time[k]<-dates[t]
+        
+        #TRL (total root length)
+        datarsml$TRL[k]<-sum(xt$length[xt$time<=dates[t]])
+        
+        #GRTR (growth rate of the root system)
+        GR<-aggregate(xt$growth, by=list(root=xt$root, order=xt$order, time=xt$time), max)
+        datarsml$GRTR[k]<-sum(GR$x[GR$time==dates[t]])
+        
+        #L1R (total first-order root length)
+        datarsml$L1R[k]<-sum(xt$length[xt$time<=dates[t] & xt$order==1])
+        
+        #GR1R (growth rate of first-order roots)
+        datarsml$GR1R[k]<-sum(GR$x[GR$time==dates[t] & GR$order==1])
+
+        #TN1R (number of first-order roots)
+        datarsml$TN1R[k]<-length(unique(xt$root[xt$time<=dates[t] & xt$order==1]))
+        
+        #TNLR (number of lateral roots)
+        datarsml$TNLR[k]<-length(unique(xt$root[xt$time<=dates[t] & xt$order>1]))
+        
+        #TLRL (total lateral root length)
+        datarsml$TLRL[k]<-sum(xt$length[xt$time<=dates[t] & xt$order>1])
+        
+        #D2LR (density of second-order roots on the first-order root)
+        datarsml$D2LR[k]<-length(unique(xt$root[xt$time<=dates[t] & xt$order==2]))/datarsml$L1R[k]
+        
+        #Latroot (number, length, mean length, growth rate)
+        
+        if (maxord>1){
+          
+          for (l in 1:(maxord-1)){
+            
+            latroot[k, l]<-length(unique(xt$root[xt$time<=dates[t] & xt$order==(l+1)])) #Number of lateral roots
+            latroot[k, l+(maxord-1)]<-sum(xt$length[xt$time<=dates[t] & xt$order==(l+1)]) #Length of lateral roots
+            if (latroot[k,l]==0) {latroot[k, l+2*(maxord-1)]<-0} else {latroot[k, l+2*(maxord-1)]<-latroot[k, l+(maxord-1)]/latroot[k, l]} #Mean lateral root length
+            latroot[k, l+3*(maxord-1)]<-sum(GR$x[GR$time==dates[t] & GR$order==(l+1)])}}
+    
+        #Diameter, surface and volume
+        
+        if (t==length(dates)){#Diameter, surface, and volume in rsml file is for the last observation date
+        
+        maxordfile<-max(xt$order)
+        
+        for (l in 1:maxordfile){ #Calculate for each root order
+          diameter[k,l]<-sum(xt$diameter3[xt$order==l])/(nrow(xt[xt$order==l,])+sum(xt$apic[xt$order==l]=="true"))
+          surface[k,l]<-sum(xt$surface[xt$order==l])
+          volume[k,l]<-sum(xt$volume[xt$order==l])}
+        
+        if (maxordfile>1) {diameter[k, ncol(diameter)]<-sum(xt$diameter3[xt$order>1])/(nrow(xt[xt$order>1,])+sum(xt$apic[xt$order>1]=="true"))} else {diameter[k, ncol(diameter)]<-NA} #Mean diameter for all lateral roots
+        
+        surface[k, ncol(surface)]<-sum(xt$surface)
+        volume[k, ncol(volume)]<-sum(xt$volume)}
+        
+        #Height
+        if (vertical3d=="y") {datarsml$Height[k]<-abs(max(xt$y2[xt$time<=dates[t]])-min(xt$y1[xt$time<=dates[t]]))}
+        if (vertical3d=="x") {datarsml$Height[k]<-abs(max(xt$x2[xt$time<=dates[t]])-min(xt$x1[xt$time<=dates[t]]))}
+        if (vertical3d=="z") {datarsml$Height[k]<-abs(max(xt$z2[xt$time<=dates[t]])-min(xt$z1[xt$time<=dates[t]]))}
+        
+        #Width
+        if (vertical3d=="y") {
+          
+          widthx<-abs(max(xt$x2[xt$time<=dates[t]])-min(xt$x2[xt$time<=dates[t]]))
+          widthz<-abs(max(xt$z2[xt$time<=dates[t]])-min(xt$z2[xt$time<=dates[t]]))
+          datarsml$Width[k]<-max(c(widthx, widthz))}
+        
+        if (vertical3d=="x") {
+          
+          widthy<-abs(max(xt$y2[xt$time<=dates[t]])-min(xt$y2[xt$time<=dates[t]]))
+          widthz<-abs(max(xt$z2[xt$time<=dates[t]])-min(xt$z2[xt$time<=dates[t]]))
+          datarsml$Width[k]<-max(c(widthy, widthz))}
+        
+        if (vertical3d=="z") {
+          
+          widthy<-abs(max(xt$y2[xt$time<=dates[t]])-min(xt$y2[xt$time<=dates[t]]))
+          widthx<-abs(max(xt$x2[xt$time<=dates[t]])-min(xt$x2[xt$time<=dates[t]]))
+          datarsml$Width[k]<-max(c(widthy, widthx))}
+        
+        #Convex hull
+        
+        if (all.equal(chull, c("x", "y"))==TRUE) {
+          
+          x<-c(xt$x1[xt$time<=dates[t]], xt$x2[xt$time<=dates[t]])
+          y<-c(xt$y1[xt$time<=dates[t]], xt$y2[xt$time<=dates[t]])
+          root.coords<-cbind(x,y)
+          boxhull<-chull(x=x, y=y)
+          
+          if (length(boxhull)<3) {datarsml$Convexhull[k]<-0}
+          else {
+          boxhull<-c(boxhull, boxhull[1])
+          boxhull.coords<-root.coords[boxhull,]
+          chull.poly<-Polygon(boxhull.coords, hole=F)
+          datarsml$Convexhull[k]<-chull.poly@area}}
+        
+        if (all.equal(chull, c("y", "z"))==TRUE) {
+          
+          y<-c(xt$y1[xt$time<=dates[t]], xt$y2[xt$time<=dates[t]])
+          z<-c(xt$z1[xt$time<=dates[t]], xt$z2[xt$time<=dates[t]])
+          root.coords<-cbind(y,z)
+          boxhull<-chull(x=y, y=z)
+          
+          if (length(boxhull)<3) {datarsml$Convexhull[k]<-0}
+          else{
+          boxhull<-c(boxhull, boxhull[1])
+          boxhull.coords<-root.coords[boxhull,]
+          chull.poly<-Polygon(boxhull.coords, hole=F)
+          datarsml$Convexhull[k]<-chull.poly@area}}
+        
+        if (all.equal(chull, c("x", "z"))==TRUE) {
+          
+          x<-c(xt$x1[xt$time<=dates[t]], xt$x2[xt$time<=dates[t]])
+          z<-c(xt$z1[xt$time<=dates[t]], xt$z2[xt$time<=dates[t]])
+          root.coords<-cbind(x,z)
+          boxhull<-chull(x=x, y=z)
+          
+          if (length(boxhull)<3) {datarsml$Convexhull[k]<-0}
+          else{
+          boxhull<-c(boxhull, boxhull[1])
+          boxhull.coords<-root.coords[boxhull,]
+          chull.poly<-Polygon(boxhull.coords, hole=F)
+          datarsml$Convexhull[k]<-chull.poly@area}}
+        
+        #Fitter topological indices
+        
+        if (fitter==TRUE){
+          
+          xt<-xt[xt$time<=dates[t],]
+          apex<-aggregate(xt$blength, by=list(root=xt$root), max)
+          apicindex<-as.vector(apply(apex, 1, function(x){which(xt$root==x["root"] & xt$blength==x["x"])}))
+          xt$apic[apicindex]<-"true"
+          branindex<-which(xt$bran=="true") #Equal to the number of roots
+          
+          #Magnitude
+          datarsml$Magnitude[k]<-sum(xt$bran=="true")
+          
+          #Altitude and external path length
+          xt$pathlength<-rep(1, nrow(xt))
+          
+          if (nrow(xt)>1){
+            
+            for (l in 1:length(branindex)){#For each root
+              
+              root<-xt$root[branindex[l]]
+              
+              testbran<-which(xt$x1==xt$x2[branindex[l]] & xt$y1==xt$y2[branindex[l]] & xt$z1==xt$z2[branindex[l]]) #Is it a crossing?
+              if (length(testbran)>1) {testbran<-testbran[which(xt$root[testbran]==root | xt$parentroot[testbran]==root)]} #Select segments based on root ID and parentroot ID
+              
+              if (length(testbran)==0) {} else {
+                
+                if (length(testbran)>=2) {
+                  xt$pathlength[testbran]<-xt$pathlength[branindex[l]]+1
+                  index<-which(xt$bran[testbran]=="false")
+                  suiv<-testbran[index]}
+                else {
+                  xt$pathlength[testbran]<-xt$pathlength[branindex[l]]
+                  suiv<-testbran}
+              
+              while(xt$apic[suiv]=="false"){
+                
+                testbran<-which(xt$x1==xt$x2[suiv] & xt$y1==xt$y2[suiv] & xt$z1==xt$z2[suiv]) #Is it a crossing?
+                if (length(testbran)>1) {testbran<-testbran[which(xt$root[testbran]==root | xt$parentroot[testbran]==root)]} #Select segments based on root ID and parentroot ID
+
+                if (length(testbran)>=2) {
+                  xt$pathlength[testbran]<-xt$pathlength[suiv]+1
+                  index<-which(xt$bran[testbran]=="false")
+                  suiv<-testbran[index]}
+                else {
+                  xt$pathlength[testbran]<-xt$pathlength[suiv]
+                  suiv<-testbran}}}}
+            
+            datarsml$Altitude[k]<-max(xt$pathlength)
+            datarsml$ExtPathLength[k]<-sum(xt$pathlength[xt$apic=="true"])}
+          
+          else{
+            
+            datarsml$Altitude[k]<-1
+            datarsml$ExtPathLength[k]<-1}}}}}
+        
+        # Results in a dataframe
+        
+        diameter<-as.data.frame(diameter)
+        colnames(diameter)<-c(paste(rep("MD", maxord), c(1:maxord), sep=""), "MDLR")
+        
+        surface<-as.data.frame(surface)
+        colnames(surface)<-c(paste(rep("S", maxord), c(1:maxord), sep=""), "Stot")
+        
+        volume<-as.data.frame(volume)
+        colnames(volume)<-c(paste(rep("V", maxord), c(1:maxord), sep=""), "Vtot")
+        
+        if (maxord>1){
+          
+          latroot<-as.data.frame(latroot)
+          
+          for (l in 1:(maxord-1)){
+            colnames(latroot)[l]<-paste("N", l+1, "LR", sep="")
+            colnames(latroot)[l+(maxord-1)]<-paste("L", l+1, "LR", sep="")
+            colnames(latroot)[l+2*(maxord-1)]<-paste("ML", l+1, "LR", sep="")
+            colnames(latroot)[l+3*(maxord-1)]<-paste("GR", l+1, "L", sep="")}
+          
+          if (fitter==TRUE) {datarsml<-data.frame(datarsml[,1:9], as.data.frame(latroot), datarsml[,10:16], as.data.frame(diameter), as.data.frame(surface), as.data.frame(volume))}
+          
+          else {datarsml<-data.frame(datarsml[,1:9], as.data.frame(latroot), datarsml[,10:13], as.data.frame(diameter), as.data.frame(surface), as.data.frame(volume))}}}
+  
+  if (is.null(inputrac)==TRUE & is.null(inputrsml)==FALSE) {return(datarsml)}
+  if (is.null(inputrsml)==TRUE & is.null(inputrac)==FALSE) {return(datadart)}
+  if (is.null(inputrsml)==FALSE & is.null(inputrac)==FALSE){return(rbind(datadart, datarsml))}}}
