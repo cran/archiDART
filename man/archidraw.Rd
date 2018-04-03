@@ -79,7 +79,7 @@ coldate=rainbow(31), lwd=2,las=1, bty="l", asp=1, xaxp=c(0,30,3), yaxp=c(0,90,9)
 
 ## Plot RSA at the last observation date
 ## One color for each observation date
-## 2D plot
+##2D plot
 archidraw(inputrsml=path, unitlength="cm", rsml.date="age", coldate=rainbow(15), lwd=2,
 twod=c("x", "y"), asp=1, las=1, bty="l")
           
