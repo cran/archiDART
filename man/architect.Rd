@@ -4,8 +4,7 @@
 \description{Calculation of common root system architecture (RSA) traits from Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2016)}, \cite{Le Bot et al (2010)}, and \cite{Lobet et al (2015)}.}
 \usage{
 architect(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px",
-          rsml.date=NULL, rsml.connect=FALSE, vertical3d="y", chull=c("x", "y"),
-          fitter=FALSE)}
+          rsml.date=NULL, rsml.connect=FALSE, vertical3d="y", fitter=FALSE)}
 \arguments{
   \item{inputrac}{A dartToTable object or a character string specifying the path to the folder containing the rac files created by DART. If \code{inputrac} is a character string, it can be the same as \code{inputtps}/\code{inputrsml}.}
   \item{inputtps}{A character string specifying the path to the folder containing the tps files created by DART. This argument can be the same as \code{inputrac}/\code{inputrsml}. This argument will not be used if \code{inputrac} is a dartToTable object.}
@@ -15,7 +14,6 @@ architect(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px
   \item{rsml.date}{Only used if \code{inputrsml} is not a rsmlToTable object. A numeric value specifying the root system age (the unit of time is defined by the user). If \code{rsml.date=NULL}, a default value of 1 is used by the function. If the root system age is stored as a continuous function along the root segments, a character string specifying the name/label of the function can be used (see details).}
   \item{rsml.connect}{Only used if \code{inputrsml} is not a rsmlToTable object. A logical value that must be specified when \code{is.null(inputrsml)=FALSE}. If \code{TRUE}, the lateral roots are connected to their parent root (see details). If \code{FALSE}, no connection is made between daughter and mother roots.}
   \item{vertical3d}{The vertical axis for 3D RSA data (x, y, or z).}
-  \item{chull}{A character vector giving the name of the axes to use for calculating the convex hull (can be c(\dQuote{x}, \dQuote{y}), c(\dQuote{x}, \dQuote{z}), or c(\dQuote{y}, \dQuote{z})).}
   \item{fitter}{A logical value. Should the Fitter topological indices be computed? Yes is TRUE, No is FALSE. See details.}
 }
 \details{
@@ -28,7 +26,7 @@ After reading the RSML files located in \code{inputrsml}, the data associated wi
 
 The argument \code{rsml.date} is used to create a tps file for each root system located in \code{inputrsml}.  If the root system age is stored as a continuous function along the root segments, the \code{rsml.date} argument can be a character string specifying the name/label of the function.  For instance, the root system age at the first apparition of each node is stored as a continuous function called \dQuote{age} in RSML files containing RSA data simulated with the ArchiSimple model (\cite{Pages et al (2013)}).  The \dQuote{age} function attaches the root system age along the root segments, so that each node is associated with one age value.  An RSML library containing 3D RSA data simulated with ArchiSimple is available here: \url{https://doi.org/10.5281/zenodo.208214}.
 
-The \code{rsml.connect} argument can be used to connect the lateral roots to their corresponding mother root.  If \code{rsml.connect=TRUE}, each point starting a lateral root is connected to the nearest point located on its mother root.  DBase is approximated by the distance between the parent root base and the point located on the mother root that is closest to the point starting a lateral root.  Using RSML files, only RSA data associated with roots possessing a branching order lower or equal to 5 are used for the computation of RSA traits.
+The \code{rsml.connect} argument can be used to connect the lateral roots to their corresponding mother root.  If \code{rsml.connect=TRUE}, each point starting a lateral root is connected to the nearest point located on its mother root.  DBase is approximated by the distance between the parent root base and the point located on the mother root that is closest to the point starting a lateral root.  Using RSML files, only RSA data associated with roots possessing a branching order lower or equal to 7 are used for the computation of RSA traits.
 
 Growth rates are calculated as follows:
 \itemize{
@@ -83,7 +81,13 @@ If \code{inputrac} is a dartTotable object and/or \code{inputrsml} is a rsmlToTa
 
 \bold{Width}: the root system width expressed in \code{unitlength}.
 
-\bold{Convexhull}: the area of the convex hull expressed in \code{unitlength^2}.
+\bold{ConvexhullXY}: the area of the convex hull on the XY plane expressed in \code{unitlength^2}.
+
+\bold{ConvexhullXZ}: the area of the convex hull on the XZ plane expressed in \code{unitlength^2}.
+
+\bold{ConvexhullYZ}: the area of the convex hull on the YZ plane expressed in \code{unitlength^2}.
+
+\bold{Convexhull3D}: the volume of the convex hull expressed in \code{unitlength^3}.
 
 \bold{Magnitude}: the magnitude of the root system. See details for more information. Computed only if \code{fitter=TRUE}.
 

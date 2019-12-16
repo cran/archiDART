@@ -64,25 +64,25 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
   # Reading of DART and rsml files
   
   if (is.null(inputrac)==FALSE){
-    filenames.rac<-list.files(path=inputrac, pattern="\\.rac$")
+    filenames.rac<-mixedsort(list.files(path=inputrac, pattern="\\.rac$"))
     path.rac<-rep(inputrac, length.out=length(filenames.rac))
     filenamesrac<-sub(x=filenames.rac, pattern="\\.rac$", replacement="")
     message(paste("Number of DART rac files in inputrac:", length(filenames.rac), sep=" "))}
   
   if (is.null(inputtps)==FALSE){
-    filenames.tps<-list.files(path=inputtps, pattern="\\.tps$")
+    filenames.tps<-mixedsort(list.files(path=inputtps, pattern="\\.tps$"))
     path.tps<-rep(inputtps, length.out=length(filenames.tps))
     filenamestps<-sub(x=filenames.tps, pattern="\\.tps$", replacement="")
     message(paste("Number of DART tps files in inputtps:", length(filenames.tps), sep=" "))}
   
   if (is.null(inputlie)==FALSE){
-    filenames.lie<-list.files(path=inputlie, pattern="\\.lie$")
+    filenames.lie<-mixedsort(list.files(path=inputlie, pattern="\\.lie$"))
     path.lie<-rep(inputlie, length.out=length(filenames.lie))
     filenameslie<-sub(x=filenames.lie, pattern="\\.lie$", replacement="")
     message(paste("Number of DART lie files in inputlie:", length(filenames.lie), sep=" "))}
   
   if (is.null(inputrsml)==FALSE){
-    filenames.rsml<-list.files(path=inputrsml, pattern="\\.rsml$")
+    filenames.rsml<-mixedsort(list.files(path=inputrsml, pattern="\\.rsml$"))
     path.rsml<-rep(inputrsml, length.out=length(filenames.rsml))
     filenamesrsml<-sub(x=filenames.rsml, pattern="\\.rsml$", replacement="")
     message(paste("Number of rsml files in inputrsml:", length(filenames.rsml), sep=" "))}
@@ -293,9 +293,14 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
     
   # Vertical direction vector
   
-  if (vertical3d=="x") {dirvert<-c(1,0,0)}
-  if (vertical3d=="y") {dirvert<-c(0,1,0)}
-  if (vertical3d=="z") {dirvert<-c(0,0,1)}
+  if ("Z" %in% colnames(LIE[[i]])) {
+    
+    if (vertical3d=="x") {
+      if (max(LIE[[i]]$X)+min(LIE[[i]]$X)>0) {dirvert<-c(1,0,0)} else {dirvert<-c(-1,0,0)}}
+    if (vertical3d=="y") {
+      if (max(LIE[[i]]$Y)+min(LIE[[i]]$Y)>0) {dirvert<-c(0,1,0)} else {dirvert<-c(0,-1,0)}}
+    if (vertical3d=="z") {
+      if (max(LIE[[i]]$Z)+min(LIE[[i]]$Z)>0) {dirvert<-c(0,0,1)} else {dirvert<-c(0,0,-1)}}}
   
   # Creating vectors and matrices for root architecture parameters calculation
   
@@ -810,14 +815,14 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
     
     for (j in 1:length(XYangle)){
       
-      if (class(XYdir[[j]])=="matrix"){
+      if (is(XYdir[[j]], "matrix")){
         
         VECTangle<-XYdir[[j]][2,]-XYdir[[j]][1,]
         normVECTangle<-sqrt(VECTangle[1]^2+VECTangle[2]^2)
         if (length(VECTangle)==2) {gr.dir[j]<-acos((VECTangle%*%c(0,1))/(normVECTangle*1))*cunitangle}
         if (length(VECTangle)==3) {gr.dir[j]<-acos((VECTangle%*%dirvert)/(normVECTangle*1))*cunitangle}}
       
-      if (class(XYangle[[j]])=="matrix"){
+      if (is(XYangle[[j]], "matrix")){
         
         if (!("Z" %in% colnames(LIE[[i]]))){
           VECTangle<-matrix(nrow=2, ncol=2)
@@ -834,7 +839,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       
       else {br.angle[j]<-NA}
       
-      if (class(XYcurv[[j]])=="matrix") {
+      if (is(XYcurv[[j]], "matrix")) {
         
         if (nrow(XYcurv[[j]])>2){
           

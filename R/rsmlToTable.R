@@ -24,7 +24,7 @@ rsmlToTable<-function(inputrsml, unitlength="px", rsml.date=NULL, rsml.connect=T
   
   #Load rsml files
   
-  filenames.rsml<-list.files(path=inputrsml, pattern="\\.rsml$")
+  filenames.rsml<-mixedsort(list.files(path=inputrsml, pattern="\\.rsml$"))
   filenamesrsml<-sub(x=filenames.rsml, pattern="\\.rsml$", replacement="")
   message(paste("Number of rsml files in inputrsml:", length(filenames.rsml), sep=" "))
   
@@ -75,11 +75,7 @@ rsmlToTable<-function(inputrsml, unitlength="px", rsml.date=NULL, rsml.connect=T
     
     if (unitlength=="px"){cunit1[i]<-1}}
   
-  # Vertical direction vector
-  
-  if (vertical3d=="x") {dirvert<-c(1,0,0)}
-  if (vertical3d=="y") {dirvert<-c(0,1,0)}
-  if (vertical3d=="z") {dirvert<-c(0,0,1)}
+  #Convertion unit angles
   
   if (unitangle=="r") {cunitangle<-1}
   if (unitangle=="d") {cunitangle<-180/pi}
@@ -98,7 +94,16 @@ rsmlToTable<-function(inputrsml, unitlength="px", rsml.date=NULL, rsml.connect=T
       rac<-RSML$rac[[j]]
       tps<-RSML$tps[[j]]
       
-      if ("Z" %in% colnames(lie)) {} else {dirvert<-c(0,1)}
+      if ("Z" %in% colnames(lie)) {
+      
+          if (vertical3d=="x") {
+            if (max(lie$X)+min(lie$X)>0) {dirvert<-c(1,0,0)} else {dirvert<-c(-1,0,0)}}
+          if (vertical3d=="y") {
+            if (max(lie$Y)+min(lie$Y)>0) {dirvert<-c(0,1,0)} else {dirvert<-c(0,-1,0)}}
+          if (vertical3d=="z") {
+            if (max(lie$Z)+min(lie$Z)>0) {dirvert<-c(0,0,1)} else {dirvert<-c(0,0,-1)}}}
+      
+      else {if (max(lie$Y)+min(lie$Y)>0) {dirvert<-c(0,1)} else {dirvert<-c(0,-1)}}
       
       #Add dbasecum column in rac file
       
@@ -147,14 +152,18 @@ rsmlToTable<-function(inputrsml, unitlength="px", rsml.date=NULL, rsml.connect=T
           table[rowsintable+s, 17]<-lie$diameter[l]*cunit1[n] #diameter2
           if ("Z" %in% colnames(lie)) {table[rowsintable+s, 18]<-distance3D(x1=lie$X[prec], y1=lie$Y[prec], z1=lie$Z[prec], x2=lie$X[l], y2=lie$Y[l], z2=lie$Z[l])*cunit1[n]} else {table[rowsintable+s, 18]<-distance2D(x1=lie$X[prec], y1=lie$Y[prec], x2=lie$X[l], y2=lie$Y[l])*cunit1[n]} #length
           table[rowsintable+s, 19]<-lie$dist[l]*cunit1[n] #blength
-          dirsegment<-c(lie$X[l]-lie$X[prec], lie$Y[l]-lie$Y[prec], lie$Z[l]-lie$Z[prec])*cunit1[n]
+          if ("Z" %in% colnames(lie)) {dirsegment<-c(lie$X[l]-lie$X[prec], lie$Y[l]-lie$Y[prec], lie$Z[l]-lie$Z[prec])*cunit1[n]} else {dirsegment<-c(lie$X[l]-lie$X[prec], lie$Y[l]-lie$Y[prec])*cunit1[n]}
           table[rowsintable+s, 20]<-acos(as.numeric(dirvert%*%dirsegment)/table[rowsintable+s, 18])*cunitangle #orientation
           table[rowsintable+s, 23]<-rac$Mother[table[rowsintable+s,3]]+1}} #parentroot
 
       rowsintable<-rowsintable+s}
   
   index<-which(is.na(table[,1])==TRUE)
-  table<-table[-index,] #Remove lines with NA values
+  
+  if (nrow(table)-length(index)==1) {
+    table<-table[-index,]
+    table<-matrix(table, ncol=length(table), nrow=1)}
+  else {table<-table[-index,]} #Remove lines with NA values
   
   #Calculate growth rate of each segment and fill growth column
 
@@ -164,9 +173,15 @@ rsmlToTable<-function(inputrsml, unitlength="px", rsml.date=NULL, rsml.connect=T
   index<-as.vector(apply(table, 1, function(x){which(sum$plant==as.numeric(x[2]) & sum$time==as.numeric(x[6]) & sum$root==as.numeric(x[3]))}))
   length1<-sum$length[index]
   table[,21]<-length1/table[,7]
-  
+
   #Geodesic distance (no geodesic distance if rsml.connect=FALSE)
-  if (rsml.connect==TRUE) {table[,22]<-table[,4]+table[,19]} else {table<-table[,-22]}
+  if (rsml.connect==TRUE) {table[,22]<-table[,4]+table[,19]} else {
+    
+    if (nrow(table)==1){
+      table<-table[,-22]
+      table<-matrix(table, ncol=length(table), nrow=1)}
+    
+    else {table<-table[,-22]}}
   
   #Check if segments have length=0
   
@@ -185,8 +200,12 @@ rsmlToTable<-function(inputrsml, unitlength="px", rsml.date=NULL, rsml.connect=T
     
     rownames(table)<-c(1:nrow(table))}
   
-  table<-table[,-c(4,7)] #Remove dbasecum and deltaage
-
+  if (nrow(table)==1) { #Remove dbasecum and deltaage
+    table<-table[,-c(4,7)]
+    table<-matrix(table, ncol=length(table), nrow=1)}
+  
+  else {table<-table[,-c(4,7)]} #Remove dbasecum and deltaage
+  
   #Fitter
   if (rsml.connect==TRUE & fitter==TRUE) {table<-fitter(table)}
   

@@ -69,19 +69,19 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
   # Reading of DART and rsml files
   
   if (is.null(inputtps)==FALSE){
-    filenames.tps<-list.files(path=inputtps, pattern="\\.tps$")
+    filenames.tps<-mixedsort(list.files(path=inputtps, pattern="\\.tps$"))
     path.tps<-rep(inputtps, length.out=length(filenames.tps))
     filenamestps<-sub(x=filenames.tps, pattern="\\.tps$", replacement="")
     message(paste("Number of DART tps files in inputtps:", length(filenames.tps), sep=" "))}
   
   if (is.null(inputlie)==FALSE){
-    filenames.lie<-list.files(path=inputlie, pattern="\\.lie$")
+    filenames.lie<-mixedsort(list.files(path=inputlie, pattern="\\.lie$"))
     path.lie<-rep(inputlie, length.out=length(filenames.lie))
     filenameslie<-sub(x=filenames.lie, pattern="\\.lie$", replacement="")
     message(paste("Number of DART lie files in inputlie:", length(filenames.lie), sep=" "))}
   
   if (is.null(inputrsml)==FALSE) {
-    filenames.rsml<-list.files(path=inputrsml, pattern="\\.rsml$")
+    filenames.rsml<-mixedsort(list.files(path=inputrsml, pattern="\\.rsml$"))
     path.rsml<-rep(inputrsml, length.out=length(filenames.rsml))
     filenamesrsml<-sub(x=filenames.rsml, pattern="\\.rsml$", replacement="")
     message(paste("Number of rsml files in inputrsml:", length(filenames.rsml), sep=" "))}
@@ -527,6 +527,7 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
         if (is.null(twod)==TRUE){
         
         LIE[[i]]$col<-colors[as.matrix(LIE[[i]][,c("root", "Date")])]
+        
         root<-sum(LIE[[i]]$Suiv==0)
         end<-which(LIE[[i]]$Suiv==0)
         open3d()
@@ -537,11 +538,11 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
           else {
             if (LIE[[i]]$Prec[end[k-1]+1]!=0){
               dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])
-              dataroot<-rbind(LIE[[i]][LIE[[i]]$Num==LIE[[i]]$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot)}
+              dataroot<-as.matrix(rbind(LIE[[i]][LIE[[i]]$Num==LIE[[i]]$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot))}
             else{
               dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])}}
           
-          lines3d(dataroot[,1:3], col=dataroot[,4], smooth=FALSE, ...)}}
+          lines3d(matrix(as.numeric(dataroot[,1:3]), ncol=3), col=dataroot[,4], smooth=FALSE, ...)}}
         
         else {
           
@@ -678,11 +679,11 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
               else {
                 if (dataroot1$Prec[end[k-1]+1]!=0){
                   dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])
-                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot)}
+                  dataroot<-as.matrix(rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot))}
                 else{
                   dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])}}
       
-              lines3d(dataroot[,1:3], col=dataroot[,4], smooth=FALSE, ...)}}
+              lines3d(matrix(as.numeric(dataroot[,1:3]), ncol=3), col=dataroot[,4], smooth=FALSE, ...)}}
             
             else {
               
@@ -825,11 +826,11 @@ archigrow<-function(inputlie=NULL, inputtps=NULL, inputrsml=NULL,  res=NULL, uni
               else {
                 if (dataroot1$Prec[end[k-1]+1]!=0){
                   dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])
-                  dataroot<-rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot)}
+                  dataroot<-as.matrix(rbind(dataroot1[dataroot1$Num==dataroot1$Prec[end[k-1]+1],c(7:9, ncol(LIE[[i]]))], dataroot))}
                 else{
                   dataroot<-as.matrix(dataroot1[(end[k-1]+1):end[k],c(7:9, ncol(LIE[[i]]))])}}
               
-              lines3d(dataroot[,1:3], col=dataroot[,4], smooth=FALSE, ...)}}
+              lines3d(matrix(as.numeric(dataroot[,1:3]), ncol=3), col=dataroot[,4], smooth=FALSE, ...)}}
             
             else {
               
