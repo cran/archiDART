@@ -815,14 +815,14 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
     
     for (j in 1:length(XYangle)){
       
-      if (is(XYdir[[j]], "matrix")){
+      if ("matrix" %in% class(XYdir[[j]])){
         
         VECTangle<-XYdir[[j]][2,]-XYdir[[j]][1,]
         normVECTangle<-sqrt(VECTangle[1]^2+VECTangle[2]^2)
         if (length(VECTangle)==2) {gr.dir[j]<-acos((VECTangle%*%c(0,1))/(normVECTangle*1))*cunitangle}
         if (length(VECTangle)==3) {gr.dir[j]<-acos((VECTangle%*%dirvert)/(normVECTangle*1))*cunitangle}}
       
-      if (is(XYangle[[j]], "matrix")){
+      if ("matrix" %in% class(XYangle[[j]])){
         
         if (!("Z" %in% colnames(LIE[[i]]))){
           VECTangle<-matrix(nrow=2, ncol=2)
@@ -839,7 +839,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
       
       else {br.angle[j]<-NA}
       
-      if (is(XYcurv[[j]], "matrix")) {
+      if ("matrix" %in% class(XYcurv[[j]])) {
         
         if (nrow(XYcurv[[j]])>2){
           
@@ -958,8 +958,12 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
     
     root<-sum(LIE[[i]]$Suiv==0)
     end<-which(LIE[[i]]$Suiv==0)
-    open3d()
-    plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
+    
+    if (!requireNamespace("rgl", quietly = TRUE)) {
+      stop("3D plotting with trajectory() requires package `rgl`. Please install it and try again.")}
+    
+    rgl::open3d()
+    rgl::plot3d(x=LIE[[i]]$X[1], y=LIE[[i]]$Y[1], z=LIE[[i]]$Z[1], type="n", xlim=xlim1, ylim=ylim1, zlim=zlim1, main=main1, ylab=ylab1, xlab=xlab1, zlab=zlab1,...)
     for (k in 1:root){
       if (k==1) {
         dataroot<-as.matrix(LIE[[i]][k:end[k],7:9])} 
@@ -970,7 +974,7 @@ trajectory<-function(inputrac=NULL, inputlie=NULL, inputtps=NULL, inputrsml=NULL
         else{
           dataroot<-as.matrix(LIE[[i]][(end[k-1]+1):end[k],7:9])}}
   
-      lines3d(dataroot, col=colors[k], smooth=FALSE, ...)}}
+      rgl::lines3d(dataroot, col=colors[k], smooth=FALSE, ...)}}
     
     else {
       

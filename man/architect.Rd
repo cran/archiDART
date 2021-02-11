@@ -4,7 +4,8 @@
 \description{Calculation of common root system architecture (RSA) traits from Data Analysis of Root Tracings (DART) output files and RSA data encoded with the Root System Markup Language (RSML). More information can be found in \cite{Delory et al (2016)}, \cite{Le Bot et al (2010)}, and \cite{Lobet et al (2015)}.}
 \usage{
 architect(inputrac=NULL, inputtps=NULL, inputrsml=NULL, res=NULL, unitlength="px",
-          rsml.date=NULL, rsml.connect=FALSE, vertical3d="y", fitter=FALSE)}
+          rsml.date=NULL, rsml.connect=FALSE, vertical3d="y",
+          fitter=FALSE)}
 \arguments{
   \item{inputrac}{A dartToTable object or a character string specifying the path to the folder containing the rac files created by DART. If \code{inputrac} is a character string, it can be the same as \code{inputtps}/\code{inputrsml}.}
   \item{inputtps}{A character string specifying the path to the folder containing the tps files created by DART. This argument can be the same as \code{inputrac}/\code{inputrsml}. This argument will not be used if \code{inputrac} is a dartToTable object.}
@@ -24,7 +25,7 @@ If \code{inputtps} contains a single tps file, it is used by \code{architect} fo
 
 After reading the RSML files located in \code{inputrsml}, the data associated with each root system are converted into a data frame possessing the same structure as the rac files created by DART.  The \code{architect} function then uses these data frames to calculate RSA traits describing the global architecture of each root system. 
 
-The argument \code{rsml.date} is used to create a tps file for each root system located in \code{inputrsml}.  If the root system age is stored as a continuous function along the root segments, the \code{rsml.date} argument can be a character string specifying the name/label of the function.  For instance, the root system age at the first apparition of each node is stored as a continuous function called \dQuote{age} in RSML files containing RSA data simulated with the ArchiSimple model (\cite{Pages et al (2013)}).  The \dQuote{age} function attaches the root system age along the root segments, so that each node is associated with one age value.  An RSML library containing 3D RSA data simulated with ArchiSimple is available here: \url{https://doi.org/10.5281/zenodo.208214}.
+The argument \code{rsml.date} is used to create a tps file for each root system located in \code{inputrsml}.  If the root system age is stored as a continuous function along the root segments, the \code{rsml.date} argument can be a character string specifying the name/label of the function.  For instance, the root system age at the first apparition of each node is stored as a continuous function called \dQuote{age} in RSML files containing RSA data simulated with the ArchiSimple model (\cite{Pages et al (2013)}).  The \dQuote{age} function attaches the root system age along the root segments, so that each node is associated with one age value.  An RSML library containing 3D RSA data simulated with ArchiSimple is available here: \doi{10.5281/zenodo.208214}.
 
 The \code{rsml.connect} argument can be used to connect the lateral roots to their corresponding mother root.  If \code{rsml.connect=TRUE}, each point starting a lateral root is connected to the nearest point located on its mother root.  DBase is approximated by the distance between the parent root base and the point located on the mother root that is closest to the point starting a lateral root.  Using RSML files, only RSA data associated with roots possessing a branching order lower or equal to 7 are used for the computation of RSA traits.
 

@@ -42,23 +42,23 @@ perhomology<-function(x, show.progress=FALSE){
       
       indexprec<-which(table$x2==table$x1[apicindex[l]] & table$y2==table$y1[apicindex[l]] & table$z2==table$z1[apicindex[l]])
       if (length(indexprec)>1) {indexprec<-indexprec[which(table$root[indexprec]==root | table$root[indexprec]==parentroot)]}
-
+      
       if (length(indexprec)>0){
         
         root<-table$root[indexprec]
         parentroot<-table$parentroot[indexprec]
-      
-          while(is.na(table$hzero[indexprec])==TRUE){
-            
-            table$hzero[indexprec]<-l
-            
-            results[[i]][l,3]<-table$geodesic[indexprec]-table$length[indexprec]
-            
-            segment1<-which(table$x2==table$x1[indexprec] & table$y2==table$y1[indexprec] & table$z2==table$z1[indexprec])
-            if (length(segment1)>1) {indexprec<-segment1[which(table$root[segment1]==root | table$root[segment1]==parentroot)]} else {indexprec<-segment1}
-            if (length(indexprec)==0){break}
-            root<-table$root[indexprec]
-            parentroot<-table$parentroot[indexprec]}}}
+        
+        while(is.na(table$hzero[indexprec])==TRUE){
+          
+          table$hzero[indexprec]<-l
+          
+          results[[i]][l,3]<-table$geodesic[indexprec]-table$length[indexprec]
+          
+          segment1<-which(table$x2==table$x1[indexprec] & table$y2==table$y1[indexprec] & table$z2==table$z1[indexprec])
+          if (length(segment1)>1) {indexprec<-segment1[which(table$root[segment1]==root | table$root[segment1]==parentroot)]} else {indexprec<-segment1}
+          if (length(indexprec)==0){break}
+          root<-table$root[indexprec]
+          parentroot<-table$parentroot[indexprec]}}}
     
     results[[i]]<-results[[i]][order(results[[i]][,3], decreasing=FALSE),]
     class(results[[i]])<-c("matrix", "barcode")}

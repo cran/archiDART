@@ -27,27 +27,3 @@ bibentry(bibtype = "Article",
                  "Plant and Soil, 398, 351-365.",
                  "doi:10.1007/s11104-015-2673-4")
 )
-
-bibentry(bibtype = "Article",
-         title        = "{archiDART v3.0}: A new data analysis pipeline allowing the topological analysis of plant root systems",
-         author       = c(person(given = "Benjamin",
-                                 family = "Delory"),
-                          person(given = "Mao",
-                                 family = "Li"),
-                          person(given = "Christopher",
-                                 family = "Topp"),
-                          person(given = "Guillaume",
-                                 family = "Lobet")),
-         journal      = "F1000Research",
-         year         = "2018",
-         volume       = "7:22",
-         pages        = "1--14",
-         doi          = "10.12688/f1000research.13541.1",
-         
-         header       = "To cite the topological analysis pipeline of archiDART in publications use:",
-         textVersion  =
-           paste("Benjamin M Delory, Mao Li, Christopher N Topp, Guillaume Lobet (2018).",
-                 "archiDART v3.0: A new data analysis pipeline allowing the topological analysis of plant root systems.",
-                 "F1000Research, 7:22.",
-                 "doi:10.12688/f1000research.13541.1")
-)

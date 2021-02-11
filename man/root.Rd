@@ -56,7 +56,7 @@ Returns a data frame. Each line of the data frame gives the attributes of one ro
 \bold{lauz}: the length of the unbranched apical zone (see \cite{Pages et al (2010)}).
 }
 \references{
-Delory B.M., Li M., Topp C.N., Lobet G. (2018). archiDART v3.0: a new data analysis pipeline allowing the topological analysis of plant root systems, \emph{F1000Research}, 7:22, DOI: \url{http://dx.doi.org/10.12688/f1000research.13541.1}
+Delory B.M., Li M., Topp C.N., Lobet G. (2018). archiDART v3.0: a new data analysis pipeline allowing the topological analysis of plant root systems, \emph{F1000Research}, 7:22, DOI: \doi{10.12688/f1000research.13541.1}
 
 Le Bot J., Serra V., Fabre J., Draye X., Adamowicz S., Pages L. (2010) DART: a software to analyse root system architecture and development from captured images, \emph{Plant and Soil}, DOI: 10.1007/s11104-009-0005-2.
 
@@ -75,5 +75,5 @@ path <- system.file("extdata", package="archiDART")
 table<-rsmlToTable(inputrsml=path, unitlength="cm", rsml.date="age")
 
 #Compute attributes for all observation dates
-roots<-root(x=table, last=FALSE)
+roots<-root(table, last=FALSE)
 }
